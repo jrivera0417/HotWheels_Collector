@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="160dp"
+    android:layout_height="220dp"
+    android:layout_margin="10dp"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="8dp"
+    android:backgroundTint="@color/card_background">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp">
+
+        <!-- Imagen -->
+        <ImageView
+            android:id="@+id/imgCar"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_hotwheels_logo"
+            android:transitionName="Car_image"/>
+
+        <!-- Número dinámico -->
+        <TextView
+            android:id="@+id/tvNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/imgCar"
+            android:layout_alignTop="@id/imgCar"
+            android:layout_margin="8dp"
+            android:background="@drawable/bg_number_glass"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:elevation="6dp"
+            android:alpha="0.95"
+            android:letterSpacing="0.03"
+            android:text=""/>
+
+        <!-- Nombre -->
+        <TextView
+            android:id="@+id/tvName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/imgCar"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Car Name"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <!-- Favorito -->
+        <ImageView
+            android:id="@+id/imgFavorite"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_alignTop="@+id/imgCar"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:padding="2dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_heart_outline"
+            app:tint="@color/icon_active" />
+
+    </RelativeLayout>
+
+</com.google.android.material.card.MaterialCardView>

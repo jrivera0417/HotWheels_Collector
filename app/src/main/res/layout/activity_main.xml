@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_main"
+    tools:context=".MainActivity">
+
+    <!-- TOP BAR -->
+    <include
+        android:id="@+id/topBar"
+        layout="@layout/view_top_bar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- CONTENIDO -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:navGraph="@navigation/nav_graph"
+        app:defaultNavHost="true"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintBottom_toTopOf="@id/customBottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- BOTTOM NAV -->
+    <FrameLayout
+        android:id="@+id/customBottomNav"
+        android:layout_width="0dp"
+        android:layout_height="70dp"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_bottom_nav"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- INDICADOR -->
+        <View
+            android:id="@+id/nav_indicator"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_margin="6dp"
+            android:background="@drawable/bg_indicator"
+            android:layout_gravity="center_vertical"/>
+
+        <!-- CONTENEDOR DE ITEMS -->
+        <LinearLayout
+            android:id="@+id/nav_items_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- ITEM -->
+            <LinearLayout
+                android:id="@+id/nav_home"
+                style="@style/NavItem">
+
+                <ImageView
+                    android:id="@+id/icon_home"
+                    style="@style/NavIcon"
+                    android:src="@drawable/ic_home"/>
+
+                <TextView
+                    android:id="@+id/text_home"
+                    android:text="Inicio"
+                    style="@style/NavText"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/nav_collection"
+                style="@style/NavItem">
+
+                <ImageView
+                    android:id="@+id/icon_collection"
+                    style="@style/NavIcon"
+                    android:src="@drawable/ic_collection"/>
+
+                <TextView
+                    android:id="@+id/text_collection"
+                    android:text="Colección"
+                    style="@style/NavText"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/nav_favorites"
+                style="@style/NavItem">
+
+                <ImageView
+                    android:id="@+id/icon_favorites"
+                    style="@style/NavIcon"
+                    android:src="@drawable/ic_favorite"/>
+
+                <TextView
+                    android:id="@+id/text_favorites"
+                    android:text="Favoritos"
+                    style="@style/NavText"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/nav_profile"
+                style="@style/NavItem">
+
+                <ImageView
+                    android:id="@+id/icon_profile"
+                    style="@style/NavIcon"
+                    android:src="@drawable/ic_profile"/>
+
+                <TextView
+                    android:id="@+id/text_profile"
+                    android:text="Perfil"
+                    style="@style/NavText"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

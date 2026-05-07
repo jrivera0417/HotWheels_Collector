@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.example.hotwheelscollector.ui.HomeFragment">
+
+        <action
+            android:id="@+id/action_home_to_collection"
+            app:destination="@id/nav_collection"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_collection"
+        android:name="com.example.hotwheelscollector.ui.ColeccionFragment" />
+
+    <fragment
+        android:id="@+id/carDetailFragment"
+        android:name="com.example.hotwheelscollector.ui.CarDetailFragment"
+        android:label="Car Detail" />
+
+    <fragment
+        android:id="@+id/nav_favorites"
+        android:name="com.example.hotwheelscollector.ui.FavoritesFragment" >
+
+        <action
+            android:id="@+id/action_nav_favorites_to_nav_collection"
+            app:destination="@id/nav_collection" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.example.hotwheelscollector.ui.ProfileFragment" />
+
+    <fragment
+        android:id="@+id/editCarFragment"
+        android:name="com.example.hotwheelscollector.ui.EditCarFragment"
+        android:label="Editar Auto" />
+
+    <action
+        android:id="@+id/action_carDetail_to_editCar"
+        app:destination="@id/editCarFragment" />
+
+</navigation>
