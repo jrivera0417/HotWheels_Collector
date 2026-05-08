@@ -1,7 +1,14 @@
 package com.example.hotwheelscollector.ui
 
 import android.os.Bundle
+import android.widget.Toast
 import android.view.View
+import android.text.Editable
+import android.text.TextWatcher
+import android.widget.EditText
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.content.Context
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -20,6 +27,7 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
     private lateinit var recycler: RecyclerView
     private lateinit var emptyState: View
     private lateinit var recyclerCategories: RecyclerView
+    private lateinit var etBuscar: EditText
     private lateinit var db: DatabaseHelper
     private lateinit var adapter: ColeccionAdapter
     private lateinit var categoryAdapter: CategoryAdapter
@@ -30,6 +38,8 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
     private var expandedCategory: Int? = null
     private var cachedCars: List<Car> = emptyList()
     private var cachedCollections: List<Collection> = emptyList()
+    private var filteredCars: List<Car> = emptyList()
+    private var currentQuery = ""
 
     private val PREFS_NAME = "collection_prefs"
     private val KEY_LAST_CATEGORY = "last_category"
@@ -45,10 +55,12 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
         recycler = view.findViewById(R.id.recyclerCars)
         recyclerCategories = view.findViewById(R.id.recyclerCategories)
         emptyState = view.findViewById(R.id.emptyState)
+        etBuscar = view.findViewById(R.id.etBuscar)
         val fab = view.findViewById<FloatingActionButton>(R.id.fabAdd)
 
         setupRecycler()
         setupCategories()
+        setupSearch()
 
         loadInitialData()
         render()
@@ -125,12 +137,87 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
         recyclerCategories.adapter = categoryAdapter
     }
 
+    private fun setupSearch() {
+
+        etBuscar.addTextChangedListener(object : TextWatcher {
+
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) {}
+
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int
+            ) {
+
+                currentQuery = s.toString().trim()
+
+                filteredCars =
+                    if (currentQuery.isEmpty()) {
+
+                        cachedCars
+
+                    } else {
+                        cachedCars.filter { car ->
+
+                            val collectionName = cachedCollections
+                                .find { it.id == car.collectionId }
+                                ?.name
+                                .orEmpty()
+
+                            car.name.contains(currentQuery, true) ||
+                                    car.modelCode.contains(currentQuery, true) ||
+                                    car.seriesNumber.contains(currentQuery, true) ||
+                                    collectionName.contains(currentQuery, true)
+                        }
+                    }
+
+                render()
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        etBuscar.setOnEditorActionListener { v, actionId, _ ->
+
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+
+                val imm = requireContext()
+                    .getSystemService(Context.INPUT_METHOD_SERVICE)
+                        as InputMethodManager
+
+                imm.hideSoftInputFromWindow(v.windowToken, 0)
+
+                v.clearFocus()
+
+                if (filteredCars.isEmpty() && currentQuery.isNotEmpty()) {
+
+                    Toast.makeText(
+                        requireContext(),
+                        "No se encontraron resultados",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                true
+            } else {
+                false
+            }
+        }
+    }
+
     // =========================
     // DATA
     // =========================
 
     private fun loadInitialData() {
         cachedCars = db.getCarsByUser(userId)
+        filteredCars = cachedCars
 
         cachedCollections = db.getCollectionsByUser(userId)
             .sortedBy { it.name.lowercase() }
@@ -144,6 +231,23 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
     private fun reloadData() {
 
         cachedCars = db.getCarsByUser(userId)
+        filteredCars =
+            if (currentQuery.isEmpty()) {
+                cachedCars
+            } else {
+                cachedCars.filter { car ->
+
+                    val collectionName = cachedCollections
+                        .find { it.id == car.collectionId }
+                        ?.name
+                        .orEmpty()
+
+                    car.name.contains(currentQuery, true) ||
+                            car.modelCode.contains(currentQuery, true) ||
+                            car.seriesNumber.contains(currentQuery, true) ||
+                            collectionName.contains(currentQuery, true)
+                }
+            }
 
         cachedCollections = db.getCollectionsByUser(userId)
             .sortedBy { it.name.lowercase() }
@@ -170,7 +274,12 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
 
         val items = buildItems()
 
+        adapter.currentQuery = currentQuery
         adapter.submitList(items.toList())
+
+        recycler.post {
+            adapter.notifyDataSetChanged()
+        }
 
         autoScroll(items)
     }
@@ -181,7 +290,9 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
 
         cachedCollections.forEach { collection ->
 
-            val fullList = cachedCars.filter { it.collectionId == collection.id }
+            val fullList = filteredCars.filter {
+                it.collectionId == collection.id
+            }
 
             if (fullList.isEmpty()) return@forEach
 

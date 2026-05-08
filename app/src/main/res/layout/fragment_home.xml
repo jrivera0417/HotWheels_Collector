@@ -48,7 +48,11 @@
                 android:textColorHint="@color/text_hint"
                 android:background="@android:color/transparent"
                 android:paddingStart="16dp"
-                android:paddingEnd="16dp"/>
+                android:paddingEnd="16dp"
+                android:singleLine="true"
+                android:maxLines="1"
+                android:imeOptions="actionSearch"
+                android:inputType="text"/>
         </com.google.android.material.card.MaterialCardView>
 
         <!-- ========================= -->
@@ -116,10 +120,9 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <!-- ========================= -->
             <!-- ÚLTIMO AGREGADO -->
-            <!-- ========================= -->
             <TextView
+                android:id="@+id/txtUltimo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Último agregado"
@@ -176,6 +179,7 @@
 
             <!-- PRIMER CARRO -->
             <TextView
+                android:id="@+id/txtPrimer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Tu primer carro"

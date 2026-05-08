@@ -1,5 +1,11 @@
 package com.example.hotwheelscollector.ui
 
+import android.graphics.Color
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
+import android.graphics.Typeface
 import android.graphics.BitmapFactory
 import android.util.Base64
 import android.view.LayoutInflater
@@ -23,6 +29,8 @@ class ColeccionAdapter(
         const val TYPE_HEADER = 0
         const val TYPE_CAR = 1
     }
+
+    var currentQuery: String = ""
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
@@ -118,7 +126,7 @@ class ColeccionAdapter(
             binding.root.alpha = 1f
             binding.root.translationY = 0f
 
-            binding.tvName.text = car.name
+            binding.tvName.text = highlightText(car.name)
             binding.tvNumber.text = car.collectionNumber
 
             //Imagen
@@ -173,4 +181,39 @@ class ColeccionAdapter(
             }
         }
     }
+
+    private fun highlightText(text: String): SpannableString {
+
+        val spannable = SpannableString(text)
+
+        if (currentQuery.isBlank()) {
+            return spannable
+        }
+
+        val startIndex =
+            text.lowercase().indexOf(currentQuery.lowercase())
+
+        if (startIndex == -1) {
+            return spannable
+        }
+
+        val endIndex = startIndex + currentQuery.length
+
+        spannable.setSpan(
+            ForegroundColorSpan(Color.parseColor("#E53935")),
+            startIndex,
+            endIndex,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        spannable.setSpan(
+            StyleSpan(Typeface.BOLD),
+            startIndex,
+            endIndex,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        return spannable
+    }
+
 }
