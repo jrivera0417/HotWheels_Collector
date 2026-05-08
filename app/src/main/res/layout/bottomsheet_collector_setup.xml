@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/background_secondary">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Personalización"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="@color/text_primary"/>
+
+        <!-- THEME -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tema"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="20dp"/>
+
+        <RadioGroup
+            android:id="@+id/rgTheme"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbRed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hot Wheels Rojo"
+                android:textColor="@color/text_secondary"/>
+
+            <RadioButton
+                android:id="@+id/rbOrange"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hot Wheels Naranja"
+                android:textColor="@color/text_secondary"/>
+        </RadioGroup>
+
+        <!-- GRID -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Diseño"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="20dp"/>
+
+        <RadioGroup
+            android:id="@+id/rgGrid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbGrid2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2 columnas"
+                android:textColor="@color/text_secondary"/>
+
+            <RadioButton
+                android:id="@+id/rbGrid3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3 columnas"
+                android:textColor="@color/text_secondary"/>
+        </RadioGroup>
+
+        <!-- SORT -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ordenar por"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="20dp"/>
+
+        <RadioGroup
+            android:id="@+id/rgSort"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbSortName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nombre A-Z"
+                android:textColor="@color/text_secondary"/>
+
+            <RadioButton
+                android:id="@+id/rbSortRecent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Más recientes"
+                android:textColor="@color/text_secondary"/>
+        </RadioGroup>
+
+        <!-- BOTON APLICAR -->
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnApply"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Aplicar cambios"/>
+
+    </LinearLayout>
+
+</ScrollView>

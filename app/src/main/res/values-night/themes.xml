@@ -1,7 +1,27 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.HotWheelsCollector" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+
+    <style name="Theme.HotWheelsCollector" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- PRIMARY -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/text_primary</item>
+        <item name="colorSecondary">@color/primary_variant</item>
+
+        <!-- BACKGROUND -->
+        <item name="android:colorBackground">@color/background_main</item>
+        <item name="colorSurface">@color/background_secondary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+
+        <!-- INPUT / CARDS -->
+        <item name="colorSurfaceVariant">@color/background_input</item>
+        <item name="cardViewStyle">@color/card_background</item>
+
+        <!-- STATUS BAR -->
+        <item name="android:statusBarColor" tools:targetApi="l">@color/background_main</item>
+
+        <!-- NAV / ICONS -->
+        <item name="android:navigationBarColor">@color/background_main</item>
+
     </style>
+
 </resources>

@@ -46,7 +46,7 @@
     <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintEnd_toStartOf="@id/ivSettings"
+        app:layout_constraintEnd_toStartOf="@id/ivTune"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginEnd="16dp">
@@ -64,12 +64,14 @@
             android:layout_gravity="end|top"/>
     </FrameLayout>
 
-    <!-- Configuración -->
+    <!-- Personalizacion de aspecto -->
     <ImageView
-        android:id="@+id/ivSettings"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/ic_settings"
+        android:id="@+id/ivTune"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:padding="2dp"
+        android:src="@drawable/ic_tune"
+        android:contentDescription="Personalizar colección"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>

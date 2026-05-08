@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- HOT WHEELS ORANGE -->
+
+    <color name="primary">#FF6A00</color>
+    <color name="primary_variant">#FF8C42</color>
+
+    <!-- Fondos -->
+    <color name="background_main">#120A00</color>
+    <color name="background_secondary">#1A1000</color>
+    <color name="background_input">#241500</color>
+
+    <!-- Texto -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#D0C8C0</color>
+    <color name="text_hint">#A89A8F</color>
+
+    <!-- Iconos -->
+    <color name="icon_active">#FF8C42</color>
+    <color name="icon_inactive">#B08A6A</color>
+
+    <!-- Extras -->
+    <color name="divider">#332000</color>
+    <color name="card_background">#1F1400</color>
+
+</resources>

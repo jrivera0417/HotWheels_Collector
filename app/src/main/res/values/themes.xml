@@ -1,16 +1,27 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+
     <style name="Theme.HotWheelsCollector" parent="Theme.Material3.DayNight.NoActionBar">
-        <!--  Colores principales  -->
+
+        <!-- PRIMARY -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/text_primary</item>
         <item name="colorSecondary">@color/primary_variant</item>
-        <item name="colorOnSecondary">@color/text_primary</item>
-        <!--  Fondo  -->
+
+        <!-- BACKGROUND -->
         <item name="android:colorBackground">@color/background_main</item>
-        <!--  Superficies  -->
         <item name="colorSurface">@color/background_secondary</item>
         <item name="colorOnSurface">@color/text_primary</item>
-        <!--  Status bar  -->
+
+        <!-- INPUT / CARDS -->
+        <item name="colorSurfaceVariant">@color/background_input</item>
+        <item name="cardViewStyle">@color/card_background</item>
+
+        <!-- STATUS BAR -->
         <item name="android:statusBarColor" tools:targetApi="l">@color/background_main</item>
+
+        <!-- NAV / ICONS -->
+        <item name="android:navigationBarColor">@color/background_main</item>
+
     </style>
+
 </resources>
