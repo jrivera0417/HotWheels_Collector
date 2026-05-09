@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.RadioGroup
+import androidx.navigation.findNavController
 import com.example.hotwheelscollector.R
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -50,16 +51,22 @@ class CollectorSetupBottomSheet : BottomSheetDialogFragment() {
 
         btnApply.setOnClickListener {
 
+            val currentDestination =
+                requireActivity()
+                    .findNavController(R.id.nav_host_fragment)
+                    .currentDestination
+                    ?.id ?: R.id.nav_home
+
             prefs.edit()
                 .putString("theme", selectedTheme)
                 .putInt("grid_columns", selectedGrid)
                 .putString("sort_order", selectedSort)
+                .putInt("last_destination", currentDestination)
                 .apply()
 
             dismiss()
 
-            requireActivity().finish()
-            startActivity(requireActivity().intent)
+            requireActivity().recreate()
         }
 
         val dialog = BottomSheetDialog(requireContext())

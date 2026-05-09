@@ -18,6 +18,7 @@ import androidx.palette.graphics.Palette
 import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.Car
 import com.example.hotwheelscollector.data.DatabaseHelper
+import com.example.hotwheelscollector.data.AppNotification
 import com.example.hotwheelscollector.utils.FavoriteEvents
 import com.google.android.material.appbar.*
 import com.google.android.material.snackbar.Snackbar
@@ -174,28 +175,80 @@ class CarDetailFragment : Fragment(R.layout.fragment_car_detail) {
 
         //Delete
         btnDelete.setOnClickListener {
+
             AlertDialog.Builder(requireContext())
                 .setTitle("Eliminar auto")
                 .setMessage("¿Seguro que quieres eliminar este carro?")
                 .setPositiveButton("Eliminar") { _, _ ->
 
                     val deletedCar = car
+                    val deletedCollection = collection
+
+                    // Eliminar
                     db.deleteCar(car.id)
+
+                    // Notificación
+                    db.insertNotification(
+                        AppNotification(
+                            title = "🚫 Auto eliminado",
+                            message = "${car.name} fue eliminado de tu colección",
+                            timestamp = System.currentTimeMillis(),
+                            isRead = false
+                        )
+                    )
+
                     FavoriteEvents.notifyChange()
 
+                    // View ROOT de la activity
+                    val rootView =
+                        requireActivity().findViewById<View>(
+                            android.R.id.content
+                        )
+
+                    // Volver inmediatamente
                     findNavController().popBackStack()
 
-                    view.post {
-                        if (isAdded) {
-                            Snackbar.make(requireView(), "Auto eliminado", Snackbar.LENGTH_LONG)
-                                .setAction("DESHACER") {
-                                    db.insertCar(deletedCar)
-                                    FavoriteEvents.notifyChange()
+                    // Snackbar global
+                    Snackbar.make(
+                        rootView,
+                        "Auto eliminado",
+                        Snackbar.LENGTH_LONG
+                    )
+                        .setAction("DESHACER") {
+
+                            // Restaurar colección
+                            if (deletedCollection != null) {
+
+                                val existing =
+                                    db.getCollectionById(
+                                        deletedCollection.id
+                                    )
+
+                                if (existing == null) {
+
+                                    db.insertCollectionObject(
+                                        deletedCollection
+                                    )
                                 }
-                                .show()
+                            }
+
+                            // Restaurar carro
+                            db.insertCar(deletedCar)
+
+                            db.insertNotification(
+                                AppNotification(
+                                    title = "♻️ Auto restaurado",
+                                    message = "${car.name} fue restaurado",
+                                    timestamp = System.currentTimeMillis(),
+                                    isRead = false
+                                )
+                            )
+
+                            FavoriteEvents.notifyChange()
                         }
-                    }
+                        .show()
                 }
+
                 .setNegativeButton("Cancelar", null)
                 .show()
         }

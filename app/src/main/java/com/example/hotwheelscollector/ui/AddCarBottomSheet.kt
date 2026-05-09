@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.Car
 import com.example.hotwheelscollector.data.DatabaseHelper
+import com.example.hotwheelscollector.data.NotificationHelper
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.yalantis.ucrop.UCrop
 import java.io.File
@@ -220,9 +221,17 @@ class AddCarBottomSheet(
                     imageUrl = imageData
                 )
 
-                db.insertCar(car)
+                val result = db.insertCar(car)
 
-                Toast.makeText(requireContext(), "Carro agregado 🚗", Toast.LENGTH_SHORT).show()
+                if (result != -1L) {
+
+                    NotificationHelper.carAdded(
+                        requireContext(),
+                        car.name
+                    )
+                }
+
+                Toast.makeText(requireContext(), "Carro agregado correctamente", Toast.LENGTH_SHORT).show()
 
                 onCarAdded()
                 dismiss()

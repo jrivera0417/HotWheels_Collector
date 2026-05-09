@@ -11,26 +11,27 @@ class DatabaseHelper(context: Context) :
 
     companion object {
         const val DATABASE_NAME = "cars.db"
-        const val DATABASE_VERSION = 4
+        const val DATABASE_VERSION = 5
 
         // TABLAS
         const val TABLE_USERS = "users"
         const val TABLE_CARS = "cars"
         const val TABLE_COLLECTIONS = "collections"
+        const val TABLE_NOTIFICATIONS = "notifications"
 
-        // USERS
+        // USUARIOS
         const val COL_USER_ID = "id"
         const val COL_USER_NAME = "name"
         const val COL_USER_EMAIL = "email"
         const val COL_USER_PASSWORD = "password"
 
-        // COLLECTIONS
+        // COLECCIONES
         const val COL_COLLECTION_ID = "id"
         const val COL_COLLECTION_USER_ID = "user_id"
         const val COL_COLLECTION_NAME = "name"
         const val COL_COLLECTION_TOTAL = "total_cars"
 
-        // CARS
+        // CARROS
         const val COL_CAR_ID = "id"
         const val COL_CAR_USER_ID = "user_id"
         const val COL_COLLECTION_ID_FK = "collection_id"
@@ -47,6 +48,13 @@ class DatabaseHelper(context: Context) :
         const val COL_QUANTITY = "quantity"
         const val COL_FAVORITE = "favorite"
         const val COL_IMAGE_URL = "image_url"
+
+        // NOTIFICACIONES
+        const val COL_NOTIFICATION_ID = "id"
+        const val COL_NOTIFICATION_TITLE = "title"
+        const val COL_NOTIFICATION_MESSAGE = "message"
+        const val COL_NOTIFICATION_TIMESTAMP = "timestamp"
+        const val COL_NOTIFICATION_IS_READ = "is_read"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -92,12 +100,24 @@ class DatabaseHelper(context: Context) :
                 FOREIGN KEY($COL_COLLECTION_ID_FK) REFERENCES $TABLE_COLLECTIONS($COL_COLLECTION_ID)
             )
         """)
+
+        db.execSQL("""
+    CREATE TABLE $TABLE_NOTIFICATIONS (
+        $COL_NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        $COL_NOTIFICATION_TITLE TEXT,
+        $COL_NOTIFICATION_MESSAGE TEXT,
+        $COL_NOTIFICATION_TIMESTAMP LONG,
+        $COL_NOTIFICATION_IS_READ INTEGER
+    )
+""")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS $TABLE_CARS")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_COLLECTIONS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_NOTIFICATIONS")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_USERS")
+
         onCreate(db)
     }
 
@@ -350,6 +370,139 @@ class DatabaseHelper(context: Context) :
     }
 
     // =========================
+    // NOTIFICATIONS
+    // =========================
+    fun insertNotification(notification: AppNotification): Long {
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+
+            put(COL_NOTIFICATION_TITLE, notification.title)
+            put(COL_NOTIFICATION_MESSAGE, notification.message)
+            put(COL_NOTIFICATION_TIMESTAMP, notification.timestamp)
+
+            put(
+                COL_NOTIFICATION_IS_READ,
+                if (notification.isRead) 1 else 0
+            )
+        }
+
+        return db.insert(
+            TABLE_NOTIFICATIONS,
+            null,
+            values
+        )
+    }
+
+    fun getAllNotifications(): List<AppNotification> {
+
+        val list = mutableListOf<AppNotification>()
+        val db = readableDatabase
+
+        val cursor = db.rawQuery(
+            """
+        SELECT * FROM $TABLE_NOTIFICATIONS
+        ORDER BY $COL_NOTIFICATION_TIMESTAMP DESC
+        """.trimIndent(),
+            null
+        )
+
+        if (cursor.moveToFirst()) {
+
+            do {
+
+                list.add(
+                    AppNotification(
+                        id = cursor.getInt(
+                            cursor.getColumnIndexOrThrow(
+                                COL_NOTIFICATION_ID
+                            )
+                        ),
+
+                        title = cursor.getString(
+                            cursor.getColumnIndexOrThrow(
+                                COL_NOTIFICATION_TITLE
+                            )
+                        ),
+
+                        message = cursor.getString(
+                            cursor.getColumnIndexOrThrow(
+                                COL_NOTIFICATION_MESSAGE
+                            )
+                        ),
+
+                        timestamp = cursor.getLong(
+                            cursor.getColumnIndexOrThrow(
+                                COL_NOTIFICATION_TIMESTAMP
+                            )
+                        ),
+
+                        isRead =
+                            cursor.getInt(
+                                cursor.getColumnIndexOrThrow(
+                                    COL_NOTIFICATION_IS_READ
+                                )
+                            ) == 1
+                    )
+                )
+
+            } while (cursor.moveToNext())
+        }
+
+        cursor.close()
+
+        return list
+    }
+
+    fun hasUnreadNotifications(): Boolean {
+
+        val db = readableDatabase
+
+        val cursor = db.rawQuery(
+            """
+        SELECT COUNT(*) FROM $TABLE_NOTIFICATIONS
+        WHERE $COL_NOTIFICATION_IS_READ = 0
+        """.trimIndent(),
+            null
+        )
+
+        val hasUnread =
+            cursor.moveToFirst() && cursor.getInt(0) > 0
+
+        cursor.close()
+
+        return hasUnread
+    }
+
+    fun markAllNotificationsAsRead() {
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+            put(COL_NOTIFICATION_IS_READ, 1)
+        }
+
+        db.update(
+            TABLE_NOTIFICATIONS,
+            values,
+            null,
+            null
+        )
+    }
+
+    fun deleteAllNotifications() {
+
+        val db = writableDatabase
+
+        db.delete(
+            TABLE_NOTIFICATIONS,
+            null,
+            null
+        )
+    }
+
+    // =========================
     // MAPPER SEGURO
     // =========================
     private fun mapCursorToCar(cursor: Cursor): Car {
@@ -389,6 +542,28 @@ class DatabaseHelper(context: Context) :
             quantity = getIntSafe(COL_QUANTITY),
             favorite = getIntSafe(COL_FAVORITE) == 1,
             imageUrl = getStringSafe(COL_IMAGE_URL)
+        )
+    }
+
+    // =========================
+    // RESTAURAR
+    // =========================
+    fun insertCollectionObject(collection: Collection): Long {
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+
+            put(COL_COLLECTION_ID, collection.id)
+            put(COL_COLLECTION_USER_ID, collection.userId)
+            put(COL_COLLECTION_NAME, collection.name)
+            put(COL_COLLECTION_TOTAL, collection.totalCars)
+        }
+
+        return db.insert(
+            TABLE_COLLECTIONS,
+            null,
+            values
         )
     }
 }

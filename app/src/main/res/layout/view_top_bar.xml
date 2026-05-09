@@ -44,12 +44,17 @@
 
     <!-- Notificaciones -->
     <FrameLayout
+        android:id="@+id/layoutNotifications"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:padding="4dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         app:layout_constraintEnd_toStartOf="@id/ivTune"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginEnd="16dp">
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <ImageView
             android:id="@+id/ivNotifications"
@@ -58,10 +63,12 @@
             android:src="@drawable/ic_notifications"/>
 
         <View
+            android:id="@+id/viewNotificationDot"
             android:layout_width="8dp"
             android:layout_height="8dp"
+            android:layout_gravity="end|top"
             android:background="@drawable/bg_dot"
-            android:layout_gravity="end|top"/>
+            android:visibility="gone"/>
     </FrameLayout>
 
     <!-- Personalizacion de aspecto -->
