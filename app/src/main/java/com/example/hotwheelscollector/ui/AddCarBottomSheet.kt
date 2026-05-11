@@ -13,13 +13,13 @@ import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.Car
 import com.example.hotwheelscollector.data.DatabaseHelper
 import com.example.hotwheelscollector.data.NotificationHelper
+import com.example.hotwheelscollector.data.SessionManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.yalantis.ucrop.UCrop
 import java.io.File
 import java.util.*
 
 class AddCarBottomSheet(
-    private val userId: Int,
     private val onCarAdded: () -> Unit
 ) : BottomSheetDialogFragment(R.layout.fragment_add_car) {
 
@@ -87,6 +87,7 @@ class AddCarBottomSheet(
         super.onViewCreated(view, savedInstanceState)
 
         val db = DatabaseHelper(requireContext())
+        val userId = SessionManager.getCurrentUserId(requireContext())
 
         val etName = view.findViewById<EditText>(R.id.etName)
         val etBrand = view.findViewById<EditText>(R.id.etBrand)

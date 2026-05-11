@@ -19,6 +19,7 @@ import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.Car
 import com.example.hotwheelscollector.data.Collection
 import com.example.hotwheelscollector.data.DatabaseHelper
+import com.example.hotwheelscollector.data.SessionManager
 import com.example.hotwheelscollector.utils.FavoriteEvents
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -49,10 +50,7 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
         super.onViewCreated(view, savedInstanceState)
 
         db = DatabaseHelper(requireContext())
-
-        val user = db.getUserByEmail("local@user.com")!!
-        userId = user.id
-
+        userId = SessionManager.getCurrentUserId(requireContext())
         recycler = view.findViewById(R.id.recyclerCars)
         recyclerCategories = view.findViewById(R.id.recyclerCategories)
         emptyState = view.findViewById(R.id.emptyState)
@@ -76,7 +74,7 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
 
         fab.setOnClickListener {
 
-            AddCarBottomSheet(userId) {
+            AddCarBottomSheet {
 
                 reloadData()
                 render()

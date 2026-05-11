@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/nav_home">
 
@@ -23,6 +24,15 @@
         android:label="Car Detail" />
 
     <fragment
+        android:id="@+id/editCarFragment"
+        android:name="com.example.hotwheelscollector.ui.EditCarFragment"
+        android:label="Editar Auto" />
+
+    <action
+        android:id="@+id/action_carDetail_to_editCar"
+        app:destination="@id/editCarFragment" />
+
+    <fragment
         android:id="@+id/nav_favorites"
         android:name="com.example.hotwheelscollector.ui.FavoritesFragment" >
 
@@ -36,12 +46,20 @@
         android:name="com.example.hotwheelscollector.ui.ProfileFragment" />
 
     <fragment
-        android:id="@+id/editCarFragment"
-        android:name="com.example.hotwheelscollector.ui.EditCarFragment"
-        android:label="Editar Auto" />
+        android:id="@+id/loginFragment"
+        android:name="com.example.hotwheelscollector.ui.auth.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login">
 
-    <action
-        android:id="@+id/action_carDetail_to_editCar"
-        app:destination="@id/editCarFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_registerFragment"
+            app:destination="@id/registerFragment"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.example.hotwheelscollector.ui.auth.RegisterFragment"
+        android:label="Register"
+        tools:layout="@layout/fragment_register"/>
 
 </navigation>

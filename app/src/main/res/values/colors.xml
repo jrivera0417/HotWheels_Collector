@@ -24,4 +24,7 @@
     <color name="divider">#2A2A2A</color>
     <color name="card_background">#1A1A1A</color>
 
+    <!-- Estados -->
+    <color name="error">#FF5252</color>
+
 </resources>

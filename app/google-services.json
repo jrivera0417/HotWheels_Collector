@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "899537051369",
+    "project_id": "hotwheelscollector-61ddf",
+    "storage_bucket": "hotwheelscollector-61ddf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:899537051369:android:52ee9b550e92c8a3de9a78",
+        "android_client_info": {
+          "package_name": "com.example.hotwheelscollector"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "899537051369-g7tt71mfa3dr1ahb1bc8lmf8ol932ibn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hotwheelscollector",
+            "certificate_hash": "1968aaa9fbc8b79ee2583336ea8fc1ad1f04d90b"
+          }
+        },
+        {
+          "client_id": "899537051369-f3amr0emu68i1083r6h1g3s36lmickl9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4NdlMBO2HcR-mZQXje_YY4p6iR7LvyO0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "899537051369-f3amr0emu68i1083r6h1g3s36lmickl9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

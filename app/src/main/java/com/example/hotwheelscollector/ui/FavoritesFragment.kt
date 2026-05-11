@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.DatabaseHelper
-import com.example.hotwheelscollector.data.User
+import com.example.hotwheelscollector.data.SessionManager
 import com.example.hotwheelscollector.utils.FavoriteEvents
 
 class FavoritesFragment : Fragment(R.layout.fragment_favorites) {
@@ -20,23 +20,7 @@ class FavoritesFragment : Fragment(R.layout.fragment_favorites) {
         super.onViewCreated(view, savedInstanceState)
 
         val db = DatabaseHelper(requireContext())
-        val defaultEmail = "local@user.com"
-
-        var user = db.getUserByEmail(defaultEmail)
-
-        if (user == null) {
-            db.insertUser(
-                User(
-                    name = "Local User",
-                    email = defaultEmail,
-                    password = "1234"
-                )
-            )
-            user = db.getUserByEmail(defaultEmail)
-        }
-
-        val userId = user!!.id
-
+        val userId = SessionManager.getCurrentUserId(requireContext())
         val btnAddFav = view.findViewById<Button>(R.id.btnAddFav)
         val emptyState = view.findViewById<View>(R.id.emptyState)
         val recycler = view.findViewById<RecyclerView>(R.id.recyclerFavorites)
@@ -44,7 +28,7 @@ class FavoritesFragment : Fragment(R.layout.fragment_favorites) {
         fun openCarDetail(carId: Int) {
             val bundle = Bundle().apply {
                 putInt("CAR_ID", carId)
-                putBoolean("FROM_COLLECTION", false) // 🔥 IMPORTANTE
+                putBoolean("FROM_COLLECTION", false)
             }
 
             findNavController().navigate(

@@ -9,9 +9,11 @@
         android:layout_height="match_parent"
         android:background="@color/background_main">
 
-        <!-- CONTENIDO PERFIL -->
+        <!-- ========================= -->
+        <!-- ESTADO: USUARIO INVITADO -->
+        <!-- ========================= -->
         <LinearLayout
-            android:id="@+id/emptyProfile"
+            android:id="@+id/layoutGuest"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -122,28 +124,115 @@
                 android:id="@+id/btnLogin"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginHorizontal="32dp"
                 android:text="Iniciar sesión"
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
-                android:layout_marginTop="24dp"
-                android:layout_marginHorizontal="32dp"
-                app:cornerRadius="12dp"
-                android:backgroundTint="@color/primary" />
+                android:backgroundTint="@color/primary"
+                app:cornerRadius="12dp" />
 
             <!-- Botón Registro -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRegister"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginHorizontal="32dp"
                 android:text="Crear cuenta"
                 android:textAllCaps="false"
                 android:textColor="@color/primary"
-                android:layout_marginTop="12dp"
-                android:layout_marginHorizontal="32dp"
+                android:backgroundTint="@android:color/transparent"
                 app:cornerRadius="12dp"
                 app:strokeWidth="2dp"
-                app:strokeColor="@color/primary"
-                android:backgroundTint="@android:color/transparent" />
+                app:strokeColor="@color/primary" />
+
+        </LinearLayout>
+
+        <!-- ========================= -->
+        <!-- ESTADO: USUARIO LOGUEADO -->
+        <!-- ========================= -->
+        <LinearLayout
+            android:id="@+id/layoutLogged"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="24dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Avatar -->
+            <ImageView
+                android:id="@+id/imgProfile"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/ic_profile"
+                android:scaleType="centerCrop"
+                android:background="@drawable/bg_profile_border"
+                android:padding="3dp" />
+
+            <!-- Nombre -->
+            <TextView
+                android:id="@+id/tvUserName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Usuario"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp" />
+
+            <!-- Email -->
+            <TextView
+                android:id="@+id/tvUserEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="usuario@email.com"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:layout_marginTop="6dp" />
+
+            <!-- Estado Sync -->
+            <TextView
+                android:id="@+id/tvSyncStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Última sincronización: Nunca"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:layout_marginTop="12dp" />
+
+            <!-- Botón Sync -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSync"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginHorizontal="32dp"
+                android:text="Sincronizar colección"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:backgroundTint="@color/primary"
+                app:cornerRadius="12dp" />
+
+            <!-- Botón Logout -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLogout"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginHorizontal="32dp"
+                android:text="Cerrar sesión"
+                android:textAllCaps="false"
+                android:textColor="@color/error"
+                android:backgroundTint="@android:color/transparent"
+                app:cornerRadius="12dp"
+                app:strokeWidth="2dp"
+                app:strokeColor="@color/error" />
 
         </LinearLayout>
 

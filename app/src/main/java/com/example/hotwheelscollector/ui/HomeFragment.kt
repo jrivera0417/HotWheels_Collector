@@ -18,7 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.DatabaseHelper
-import com.example.hotwheelscollector.data.User
+import com.example.hotwheelscollector.data.SessionManager
 import com.example.hotwheelscollector.utils.FavoriteEvents
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
@@ -29,23 +29,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onViewCreated(view, savedInstanceState)
 
         val db = DatabaseHelper(requireContext())
-        val defaultEmail = "local@user.com"
-
-        //USER SETUP
-        var user = db.getUserByEmail(defaultEmail)
-
-        if (user == null) {
-            db.insertUser(
-                User(
-                    name = "Local User",
-                    email = defaultEmail,
-                    password = "1234"
-                )
-            )
-            user = db.getUserByEmail(defaultEmail)
-        }
-
-        val userId = user?.id ?: return
+        val userId = SessionManager.getCurrentUserId(requireContext())
         var cachedCars = db.getCarsByUser(userId)
 
         //VIEWS

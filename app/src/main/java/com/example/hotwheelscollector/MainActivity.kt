@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import com.example.hotwheelscollector.data.DatabaseHelper
+import com.example.hotwheelscollector.data.SessionManager
 import com.example.hotwheelscollector.ui.notifications.NotificationBottomSheet
 import com.example.hotwheelscollector.ui.settings.CollectorSetupBottomSheet
 
@@ -21,6 +22,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var notificationDot: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        SessionManager.getOrCreateGuestUser(this)
 
         // =========================
         // TEMA DINÁMICO (HOT WHEELS)

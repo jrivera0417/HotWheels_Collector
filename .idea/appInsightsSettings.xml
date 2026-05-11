@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.hotwheelscollector" />
+                  <option name="mobileSdkAppId" value="1:899537051369:android:52ee9b550e92c8a3de9a78" />
+                  <option name="projectId" value="hotwheelscollector-61ddf" />
+                  <option name="projectNumber" value="899537051369" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

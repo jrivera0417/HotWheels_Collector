@@ -1,5 +1,12 @@
 <resources>
-    <string name="app_name">HotWheels Collector</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="app_name">
+        HotWheels Collector
+    </string>
+    <string name="hello_blank_fragment">
+        Hello blank fragment
+    </string>
+
+    <string name="default_web_client_id">
+        899537051369-f3amr0emu68i1083r6h1g3s36lmickl9.apps.googleusercontent.com
+    </string>
 </resources>

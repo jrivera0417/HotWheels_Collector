@@ -10,28 +10,38 @@ class DatabaseHelper(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
-        const val DATABASE_NAME = "cars.db"
-        const val DATABASE_VERSION = 5
 
+        const val DATABASE_NAME = "cars.db"
+        const val DATABASE_VERSION = 6
+
+        // =========================
         // TABLAS
+        // =========================
         const val TABLE_USERS = "users"
         const val TABLE_CARS = "cars"
         const val TABLE_COLLECTIONS = "collections"
         const val TABLE_NOTIFICATIONS = "notifications"
 
-        // USUARIOS
+        // =========================
+        // USERS
+        // =========================
         const val COL_USER_ID = "id"
         const val COL_USER_NAME = "name"
         const val COL_USER_EMAIL = "email"
         const val COL_USER_PASSWORD = "password"
+        const val COL_USER_FIREBASE_UID = "firebase_uid"
 
-        // COLECCIONES
+        // =========================
+        // COLLECTIONS
+        // =========================
         const val COL_COLLECTION_ID = "id"
         const val COL_COLLECTION_USER_ID = "user_id"
         const val COL_COLLECTION_NAME = "name"
         const val COL_COLLECTION_TOTAL = "total_cars"
 
-        // CARROS
+        // =========================
+        // CARS
+        // =========================
         const val COL_CAR_ID = "id"
         const val COL_CAR_USER_ID = "user_id"
         const val COL_COLLECTION_ID_FK = "collection_id"
@@ -49,7 +59,9 @@ class DatabaseHelper(context: Context) :
         const val COL_FAVORITE = "favorite"
         const val COL_IMAGE_URL = "image_url"
 
-        // NOTIFICACIONES
+        // =========================
+        // NOTIFICATIONS
+        // =========================
         const val COL_NOTIFICATION_ID = "id"
         const val COL_NOTIFICATION_TITLE = "title"
         const val COL_NOTIFICATION_MESSAGE = "message"
@@ -57,6 +69,9 @@ class DatabaseHelper(context: Context) :
         const val COL_NOTIFICATION_IS_READ = "is_read"
     }
 
+    // =========================
+    // CREATE
+    // =========================
     override fun onCreate(db: SQLiteDatabase) {
 
         db.execSQL("""
@@ -64,7 +79,8 @@ class DatabaseHelper(context: Context) :
                 $COL_USER_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 $COL_USER_NAME TEXT,
                 $COL_USER_EMAIL TEXT UNIQUE,
-                $COL_USER_PASSWORD TEXT
+                $COL_USER_PASSWORD TEXT,
+                $COL_USER_FIREBASE_UID TEXT
             )
         """)
 
@@ -74,7 +90,8 @@ class DatabaseHelper(context: Context) :
                 $COL_COLLECTION_USER_ID INTEGER,
                 $COL_COLLECTION_NAME TEXT,
                 $COL_COLLECTION_TOTAL INTEGER,
-                FOREIGN KEY($COL_COLLECTION_USER_ID) REFERENCES $TABLE_USERS($COL_USER_ID)
+                FOREIGN KEY($COL_COLLECTION_USER_ID)
+                REFERENCES $TABLE_USERS($COL_USER_ID)
             )
         """)
 
@@ -96,23 +113,35 @@ class DatabaseHelper(context: Context) :
                 $COL_QUANTITY INTEGER,
                 $COL_FAVORITE INTEGER,
                 $COL_IMAGE_URL TEXT,
-                FOREIGN KEY($COL_CAR_USER_ID) REFERENCES $TABLE_USERS($COL_USER_ID),
-                FOREIGN KEY($COL_COLLECTION_ID_FK) REFERENCES $TABLE_COLLECTIONS($COL_COLLECTION_ID)
+
+                FOREIGN KEY($COL_CAR_USER_ID)
+                REFERENCES $TABLE_USERS($COL_USER_ID),
+
+                FOREIGN KEY($COL_COLLECTION_ID_FK)
+                REFERENCES $TABLE_COLLECTIONS($COL_COLLECTION_ID)
             )
         """)
 
         db.execSQL("""
-    CREATE TABLE $TABLE_NOTIFICATIONS (
-        $COL_NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        $COL_NOTIFICATION_TITLE TEXT,
-        $COL_NOTIFICATION_MESSAGE TEXT,
-        $COL_NOTIFICATION_TIMESTAMP LONG,
-        $COL_NOTIFICATION_IS_READ INTEGER
-    )
-""")
+            CREATE TABLE $TABLE_NOTIFICATIONS (
+                $COL_NOTIFICATION_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_NOTIFICATION_TITLE TEXT,
+                $COL_NOTIFICATION_MESSAGE TEXT,
+                $COL_NOTIFICATION_TIMESTAMP LONG,
+                $COL_NOTIFICATION_IS_READ INTEGER
+            )
+        """)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+    // =========================
+    // UPGRADE
+    // =========================
+    override fun onUpgrade(
+        db: SQLiteDatabase,
+        oldVersion: Int,
+        newVersion: Int
+    ) {
+
         db.execSQL("DROP TABLE IF EXISTS $TABLE_CARS")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_COLLECTIONS")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NOTIFICATIONS")
@@ -125,33 +154,162 @@ class DatabaseHelper(context: Context) :
     // USERS
     // =========================
     fun insertUser(user: User): Long {
+
         val db = writableDatabase
+
         val values = ContentValues().apply {
+
             put(COL_USER_NAME, user.name)
             put(COL_USER_EMAIL, user.email)
             put(COL_USER_PASSWORD, user.password)
+            put(COL_USER_FIREBASE_UID, user.firebaseUid)
         }
-        return db.insert(TABLE_USERS, null, values)
+
+        return db.insert(
+            TABLE_USERS,
+            null,
+            values
+        )
+    }
+
+    fun ensureGuestUser(): User {
+
+        val existingUser =
+            getUserByEmail("guest@local")
+
+        if (existingUser != null) {
+            return existingUser
+        }
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+
+            put(COL_USER_NAME, "Invitado")
+            put(COL_USER_EMAIL, "guest@local")
+            put(COL_USER_PASSWORD, "")
+            put(COL_USER_FIREBASE_UID, "")
+        }
+
+        val insertedId = db.insert(
+            TABLE_USERS,
+            null,
+            values
+        ).toInt()
+
+        return User(
+            id = insertedId,
+            name = "Invitado",
+            email = "guest@local",
+            password = "",
+            firebaseUid = ""
+        )
     }
 
     fun getUserByEmail(email: String): User? {
+
         val db = readableDatabase
+
         val cursor = db.rawQuery(
             "SELECT * FROM $TABLE_USERS WHERE $COL_USER_EMAIL = ?",
             arrayOf(email)
         )
 
         return if (cursor.moveToFirst()) {
+
             val user = User(
-                id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_USER_ID)),
-                name = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_NAME)),
-                email = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_EMAIL)),
-                password = cursor.getString(cursor.getColumnIndexOrThrow(COL_USER_PASSWORD))
+                id = cursor.getInt(
+                    cursor.getColumnIndexOrThrow(COL_USER_ID)
+                ),
+
+                name = cursor.getString(
+                    cursor.getColumnIndexOrThrow(COL_USER_NAME)
+                ),
+
+                email = cursor.getString(
+                    cursor.getColumnIndexOrThrow(COL_USER_EMAIL)
+                ),
+
+                password = cursor.getString(
+                    cursor.getColumnIndexOrThrow(COL_USER_PASSWORD)
+                ),
+
+                firebaseUid = cursor.getString(
+                    cursor.getColumnIndexOrThrow(
+                        COL_USER_FIREBASE_UID
+                    )
+                ) ?: ""
             )
+
             cursor.close()
+
             user
+
         } else {
+
             cursor.close()
+
+            null
+        }
+    }
+
+    fun getUserByFirebaseUid(
+        firebaseUid: String
+    ): User? {
+
+        val db = readableDatabase
+
+        val cursor = db.rawQuery(
+            """
+            SELECT * FROM $TABLE_USERS
+            WHERE $COL_USER_FIREBASE_UID = ?
+            """.trimIndent(),
+            arrayOf(firebaseUid)
+        )
+
+        return if (cursor.moveToFirst()) {
+
+            val user = User(
+
+                id = cursor.getInt(
+                    cursor.getColumnIndexOrThrow(
+                        COL_USER_ID
+                    )
+                ),
+
+                name = cursor.getString(
+                    cursor.getColumnIndexOrThrow(
+                        COL_USER_NAME
+                    )
+                ),
+
+                email = cursor.getString(
+                    cursor.getColumnIndexOrThrow(
+                        COL_USER_EMAIL
+                    )
+                ),
+
+                password = cursor.getString(
+                    cursor.getColumnIndexOrThrow(
+                        COL_USER_PASSWORD
+                    )
+                ),
+
+                firebaseUid = cursor.getString(
+                    cursor.getColumnIndexOrThrow(
+                        COL_USER_FIREBASE_UID
+                    )
+                ) ?: ""
+            )
+
+            cursor.close()
+
+            user
+
+        } else {
+
+            cursor.close()
+
             null
         }
     }
@@ -159,64 +317,135 @@ class DatabaseHelper(context: Context) :
     // =========================
     // COLLECTIONS
     // =========================
-    fun insertCollection(userId: Int, name: String, totalCars: Int): Long {
+    fun insertCollection(
+        userId: Int,
+        name: String,
+        totalCars: Int
+    ): Long {
+
         val db = writableDatabase
+
         val values = ContentValues().apply {
+
             put(COL_COLLECTION_USER_ID, userId)
             put(COL_COLLECTION_NAME, name)
             put(COL_COLLECTION_TOTAL, totalCars)
         }
-        return db.insert(TABLE_COLLECTIONS, null, values)
+
+        return db.insert(
+            TABLE_COLLECTIONS,
+            null,
+            values
+        )
     }
 
-    fun getCollectionsByUser(userId: Int): List<Collection> {
+    fun getCollectionsByUser(
+        userId: Int
+    ): List<Collection> {
+
         val list = mutableListOf<Collection>()
+
         val db = readableDatabase
 
         val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_COLLECTIONS WHERE $COL_COLLECTION_USER_ID = ?",
+            """
+            SELECT * FROM $TABLE_COLLECTIONS
+            WHERE $COL_COLLECTION_USER_ID = ?
+            """.trimIndent(),
             arrayOf(userId.toString())
         )
 
         if (cursor.moveToFirst()) {
+
             do {
+
                 list.add(
                     Collection(
-                        id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_COLLECTION_ID)),
-                        userId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_COLLECTION_USER_ID)),
-                        name = cursor.getString(cursor.getColumnIndexOrThrow(COL_COLLECTION_NAME)),
-                        totalCars = cursor.getInt(cursor.getColumnIndexOrThrow(COL_COLLECTION_TOTAL))
+                        id = cursor.getInt(
+                            cursor.getColumnIndexOrThrow(
+                                COL_COLLECTION_ID
+                            )
+                        ),
+
+                        userId = cursor.getInt(
+                            cursor.getColumnIndexOrThrow(
+                                COL_COLLECTION_USER_ID
+                            )
+                        ),
+
+                        name = cursor.getString(
+                            cursor.getColumnIndexOrThrow(
+                                COL_COLLECTION_NAME
+                            )
+                        ),
+
+                        totalCars = cursor.getInt(
+                            cursor.getColumnIndexOrThrow(
+                                COL_COLLECTION_TOTAL
+                            )
+                        )
                     )
                 )
+
             } while (cursor.moveToNext())
         }
 
         cursor.close()
+
         return list
     }
 
-    fun getCollectionById(collectionId: Int): Collection? {
+    fun getCollectionById(
+        collectionId: Int
+    ): Collection? {
+
         val db = readableDatabase
 
         val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_COLLECTIONS WHERE $COL_COLLECTION_ID = ?",
+            """
+            SELECT * FROM $TABLE_COLLECTIONS
+            WHERE $COL_COLLECTION_ID = ?
+            """.trimIndent(),
             arrayOf(collectionId.toString())
         )
 
         return if (cursor.moveToFirst()) {
 
             val collection = Collection(
-                id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_COLLECTION_ID)),
-                userId = cursor.getInt(cursor.getColumnIndexOrThrow(COL_COLLECTION_USER_ID)),
-                name = cursor.getString(cursor.getColumnIndexOrThrow(COL_COLLECTION_NAME)),
-                totalCars = cursor.getInt(cursor.getColumnIndexOrThrow(COL_COLLECTION_TOTAL))
+
+                id = cursor.getInt(
+                    cursor.getColumnIndexOrThrow(
+                        COL_COLLECTION_ID
+                    )
+                ),
+
+                userId = cursor.getInt(
+                    cursor.getColumnIndexOrThrow(
+                        COL_COLLECTION_USER_ID
+                    )
+                ),
+
+                name = cursor.getString(
+                    cursor.getColumnIndexOrThrow(
+                        COL_COLLECTION_NAME
+                    )
+                ),
+
+                totalCars = cursor.getInt(
+                    cursor.getColumnIndexOrThrow(
+                        COL_COLLECTION_TOTAL
+                    )
+                )
             )
 
             cursor.close()
+
             collection
 
         } else {
+
             cursor.close()
+
             null
         }
     }
@@ -225,8 +454,11 @@ class DatabaseHelper(context: Context) :
     // CARS
     // =========================
     fun insertCar(car: Car): Long {
+
         val db = writableDatabase
+
         val values = ContentValues().apply {
+
             put(COL_CAR_USER_ID, car.userId)
             put(COL_COLLECTION_ID_FK, car.collectionId)
             put(COL_MODEL_CODE, car.modelCode)
@@ -243,50 +475,81 @@ class DatabaseHelper(context: Context) :
             put(COL_FAVORITE, if (car.favorite) 1 else 0)
             put(COL_IMAGE_URL, car.imageUrl)
         }
-        return db.insert(TABLE_CARS, null, values)
+
+        return db.insert(
+            TABLE_CARS,
+            null,
+            values
+        )
     }
 
     fun getCarsByUser(userId: Int): List<Car> {
+
         val list = mutableListOf<Car>()
+
         val db = readableDatabase
 
         val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_CARS WHERE $COL_CAR_USER_ID = ?",
+            """
+            SELECT * FROM $TABLE_CARS
+            WHERE $COL_CAR_USER_ID = ?
+            """.trimIndent(),
             arrayOf(userId.toString())
         )
 
         if (cursor.moveToFirst()) {
+
             do {
                 list.add(mapCursorToCar(cursor))
             } while (cursor.moveToNext())
         }
 
         cursor.close()
+
         return list
     }
 
     fun getCarById(carId: Int): Car? {
+
         val db = readableDatabase
 
         val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_CARS WHERE $COL_CAR_ID = ?",
+            """
+            SELECT * FROM $TABLE_CARS
+            WHERE $COL_CAR_ID = ?
+            """.trimIndent(),
             arrayOf(carId.toString())
         )
 
         return if (cursor.moveToFirst()) {
+
             val car = mapCursorToCar(cursor)
+
             cursor.close()
+
             car
+
         } else {
+
             cursor.close()
+
             null
         }
     }
 
-    fun updateFavorite(carId: Int, isFavorite: Boolean) {
+    fun updateFavorite(
+        carId: Int,
+        isFavorite: Boolean
+    ) {
+
         val db = writableDatabase
+
         val values = ContentValues().apply {
-            put(COL_FAVORITE, if (isFavorite) 1 else 0)
+
+            put(
+                COL_FAVORITE,
+                if (isFavorite) 1 else 0
+            )
         }
 
         db.update(
@@ -297,22 +560,32 @@ class DatabaseHelper(context: Context) :
         )
     }
 
-    fun getFavoriteCars(userId: Int): List<Car> {
+    fun getFavoriteCars(
+        userId: Int
+    ): List<Car> {
+
         val list = mutableListOf<Car>()
+
         val db = readableDatabase
 
         val cursor = db.rawQuery(
-            "SELECT * FROM $TABLE_CARS WHERE $COL_CAR_USER_ID = ? AND $COL_FAVORITE = 1",
+            """
+            SELECT * FROM $TABLE_CARS
+            WHERE $COL_CAR_USER_ID = ?
+            AND $COL_FAVORITE = 1
+            """.trimIndent(),
             arrayOf(userId.toString())
         )
 
         if (cursor.moveToFirst()) {
+
             do {
                 list.add(mapCursorToCar(cursor))
             } while (cursor.moveToNext())
         }
 
         cursor.close()
+
         return list
     }
 
@@ -320,7 +593,9 @@ class DatabaseHelper(context: Context) :
 
         val db = writableDatabase
 
-        val car = getCarById(carId) ?: return
+        val car = getCarById(carId)
+            ?: return
+
         val collectionId = car.collectionId
 
         db.delete(
@@ -329,13 +604,19 @@ class DatabaseHelper(context: Context) :
             arrayOf(carId.toString())
         )
 
-        // 🔥 si la colección quedó vacía, la borras
         val cursor = db.rawQuery(
-            "SELECT COUNT(*) FROM $TABLE_CARS WHERE $COL_COLLECTION_ID_FK = ?",
+            """
+            SELECT COUNT(*) FROM $TABLE_CARS
+            WHERE $COL_COLLECTION_ID_FK = ?
+            """.trimIndent(),
             arrayOf(collectionId.toString())
         )
 
-        if (cursor.moveToFirst() && cursor.getInt(0) == 0) {
+        if (
+            cursor.moveToFirst()
+            && cursor.getInt(0) == 0
+        ) {
+
             db.delete(
                 TABLE_COLLECTIONS,
                 "$COL_COLLECTION_ID = ?",
@@ -351,6 +632,7 @@ class DatabaseHelper(context: Context) :
         val db = writableDatabase
 
         val values = ContentValues().apply {
+
             put(COL_NAME, car.name)
             put(COL_COLOR, car.color)
             put(COL_PRICE, car.price)
@@ -372,7 +654,9 @@ class DatabaseHelper(context: Context) :
     // =========================
     // NOTIFICATIONS
     // =========================
-    fun insertNotification(notification: AppNotification): Long {
+    fun insertNotification(
+        notification: AppNotification
+    ): Long {
 
         val db = writableDatabase
 
@@ -395,16 +679,19 @@ class DatabaseHelper(context: Context) :
         )
     }
 
-    fun getAllNotifications(): List<AppNotification> {
+    fun getAllNotifications():
+            List<AppNotification> {
 
-        val list = mutableListOf<AppNotification>()
+        val list =
+            mutableListOf<AppNotification>()
+
         val db = readableDatabase
 
         val cursor = db.rawQuery(
             """
-        SELECT * FROM $TABLE_NOTIFICATIONS
-        ORDER BY $COL_NOTIFICATION_TIMESTAMP DESC
-        """.trimIndent(),
+            SELECT * FROM $TABLE_NOTIFICATIONS
+            ORDER BY $COL_NOTIFICATION_TIMESTAMP DESC
+            """.trimIndent(),
             null
         )
 
@@ -414,6 +701,7 @@ class DatabaseHelper(context: Context) :
 
                 list.add(
                     AppNotification(
+
                         id = cursor.getInt(
                             cursor.getColumnIndexOrThrow(
                                 COL_NOTIFICATION_ID
@@ -461,14 +749,15 @@ class DatabaseHelper(context: Context) :
 
         val cursor = db.rawQuery(
             """
-        SELECT COUNT(*) FROM $TABLE_NOTIFICATIONS
-        WHERE $COL_NOTIFICATION_IS_READ = 0
-        """.trimIndent(),
+            SELECT COUNT(*) FROM $TABLE_NOTIFICATIONS
+            WHERE $COL_NOTIFICATION_IS_READ = 0
+            """.trimIndent(),
             null
         )
 
         val hasUnread =
-            cursor.moveToFirst() && cursor.getInt(0) > 0
+            cursor.moveToFirst()
+                    && cursor.getInt(0) > 0
 
         cursor.close()
 
@@ -503,29 +792,77 @@ class DatabaseHelper(context: Context) :
     }
 
     // =========================
-    // MAPPER SEGURO
+    // RESTORE COLLECTION
     // =========================
-    private fun mapCursorToCar(cursor: Cursor): Car {
+    fun insertCollectionObject(
+        collection: Collection
+    ): Long {
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+
+            put(COL_COLLECTION_ID, collection.id)
+            put(COL_COLLECTION_USER_ID, collection.userId)
+            put(COL_COLLECTION_NAME, collection.name)
+            put(COL_COLLECTION_TOTAL, collection.totalCars)
+        }
+
+        return db.insert(
+            TABLE_COLLECTIONS,
+            null,
+            values
+        )
+    }
+
+    // =========================
+    // MAPPER
+    // =========================
+    private fun mapCursorToCar(
+        cursor: Cursor
+    ): Car {
 
         fun getStringSafe(column: String): String {
+
             return try {
-                cursor.getString(cursor.getColumnIndexOrThrow(column)) ?: ""
-            } catch (e: Exception) { "" }
+
+                cursor.getString(
+                    cursor.getColumnIndexOrThrow(column)
+                ) ?: ""
+
+            } catch (e: Exception) {
+                ""
+            }
         }
 
         fun getIntSafe(column: String): Int {
+
             return try {
-                cursor.getInt(cursor.getColumnIndexOrThrow(column))
-            } catch (e: Exception) { 0 }
+
+                cursor.getInt(
+                    cursor.getColumnIndexOrThrow(column)
+                )
+
+            } catch (e: Exception) {
+                0
+            }
         }
 
         fun getDoubleSafe(column: String): Double {
+
             return try {
-                cursor.getDouble(cursor.getColumnIndexOrThrow(column))
-            } catch (e: Exception) { 0.0 }
+
+                cursor.getDouble(
+                    cursor.getColumnIndexOrThrow(column)
+                )
+
+            } catch (e: Exception) {
+                0.0
+            }
         }
 
         return Car(
+
             id = getIntSafe(COL_CAR_ID),
             userId = getIntSafe(COL_CAR_USER_ID),
             collectionId = getIntSafe(COL_COLLECTION_ID_FK),
@@ -542,28 +879,6 @@ class DatabaseHelper(context: Context) :
             quantity = getIntSafe(COL_QUANTITY),
             favorite = getIntSafe(COL_FAVORITE) == 1,
             imageUrl = getStringSafe(COL_IMAGE_URL)
-        )
-    }
-
-    // =========================
-    // RESTAURAR
-    // =========================
-    fun insertCollectionObject(collection: Collection): Long {
-
-        val db = writableDatabase
-
-        val values = ContentValues().apply {
-
-            put(COL_COLLECTION_ID, collection.id)
-            put(COL_COLLECTION_USER_ID, collection.userId)
-            put(COL_COLLECTION_NAME, collection.name)
-            put(COL_COLLECTION_TOTAL, collection.totalCars)
-        }
-
-        return db.insert(
-            TABLE_COLLECTIONS,
-            null,
-            values
         )
     }
 }
