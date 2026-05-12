@@ -6,13 +6,19 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class DatabaseHelper(context: Context) :
-    SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+class DatabaseHelper(
+    private val context: Context
+) : SQLiteOpenHelper(
+    context,
+    DATABASE_NAME,
+    null,
+    DATABASE_VERSION
+) {
 
     companion object {
 
         const val DATABASE_NAME = "cars.db"
-        const val DATABASE_VERSION = 6
+        const val DATABASE_VERSION = 11
 
         // =========================
         // TABLAS
@@ -38,6 +44,7 @@ class DatabaseHelper(context: Context) :
         const val COL_COLLECTION_USER_ID = "user_id"
         const val COL_COLLECTION_NAME = "name"
         const val COL_COLLECTION_TOTAL = "total_cars"
+        const val COL_UPDATED_AT = "updated_at"
 
         // =========================
         // CARS
@@ -58,6 +65,7 @@ class DatabaseHelper(context: Context) :
         const val COL_QUANTITY = "quantity"
         const val COL_FAVORITE = "favorite"
         const val COL_IMAGE_URL = "image_url"
+        const val COL_CAR_UPDATED_AT = "updated_at"
 
         // =========================
         // NOTIFICATIONS
@@ -90,6 +98,7 @@ class DatabaseHelper(context: Context) :
                 $COL_COLLECTION_USER_ID INTEGER,
                 $COL_COLLECTION_NAME TEXT,
                 $COL_COLLECTION_TOTAL INTEGER,
+                $COL_UPDATED_AT LONG,
                 FOREIGN KEY($COL_COLLECTION_USER_ID)
                 REFERENCES $TABLE_USERS($COL_USER_ID)
             )
@@ -113,10 +122,9 @@ class DatabaseHelper(context: Context) :
                 $COL_QUANTITY INTEGER,
                 $COL_FAVORITE INTEGER,
                 $COL_IMAGE_URL TEXT,
-
+                $COL_CAR_UPDATED_AT LONG,
                 FOREIGN KEY($COL_CAR_USER_ID)
                 REFERENCES $TABLE_USERS($COL_USER_ID),
-
                 FOREIGN KEY($COL_COLLECTION_ID_FK)
                 REFERENCES $TABLE_COLLECTIONS($COL_COLLECTION_ID)
             )
@@ -330,12 +338,57 @@ class DatabaseHelper(context: Context) :
             put(COL_COLLECTION_USER_ID, userId)
             put(COL_COLLECTION_NAME, name)
             put(COL_COLLECTION_TOTAL, totalCars)
+            put(COL_UPDATED_AT, System.currentTimeMillis())
         }
 
-        return db.insert(
+        val id = db.insert(
             TABLE_COLLECTIONS,
             null,
             values
+        )
+
+        // =========================
+        // FIRESTORE SYNC
+        // =========================
+        if (id != -1L) {
+
+            SyncStatusManager.setState(
+                SyncState.PENDING
+            )
+            SyncManager.syncCollection(
+                Collection(
+                    id = id.toInt(),
+                    userId = userId,
+                    name = name,
+                    totalCars = totalCars,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        }
+
+        return id
+    }
+
+    fun insertCollectionLocalOnly(
+        collection: Collection
+    ): Long {
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+
+            put(COL_COLLECTION_ID, collection.id)
+            put(COL_COLLECTION_USER_ID, collection.userId)
+            put(COL_COLLECTION_NAME, collection.name)
+            put(COL_COLLECTION_TOTAL, collection.totalCars)
+            put(COL_UPDATED_AT, collection.updatedAt)
+        }
+
+        return db.insertWithOnConflict(
+            TABLE_COLLECTIONS,
+            null,
+            values,
+            SQLiteDatabase.CONFLICT_REPLACE
         )
     }
 
@@ -459,6 +512,7 @@ class DatabaseHelper(context: Context) :
 
         val values = ContentValues().apply {
 
+            put(COL_CAR_ID, car.id)
             put(COL_CAR_USER_ID, car.userId)
             put(COL_COLLECTION_ID_FK, car.collectionId)
             put(COL_MODEL_CODE, car.modelCode)
@@ -474,12 +528,67 @@ class DatabaseHelper(context: Context) :
             put(COL_QUANTITY, car.quantity)
             put(COL_FAVORITE, if (car.favorite) 1 else 0)
             put(COL_IMAGE_URL, car.imageUrl)
+            put(COL_UPDATED_AT, car.updatedAt)
         }
 
-        return db.insert(
+        val id = db.insertWithOnConflict(
             TABLE_CARS,
             null,
-            values
+            values,
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+
+        // =========================
+        // FIRESTORE SYNC
+        // =========================
+        if (id != -1L) {
+
+            SyncStatusManager.setState(
+                SyncState.PENDING
+            )
+
+            SyncManager.syncCar(
+                context,
+                car.copy(
+                    id = car.id.takeIf { it != 0 }
+                        ?: id.toInt()
+                )
+            )
+        }
+
+        return id
+    }
+
+    fun insertCarLocalOnly(car: Car): Long {
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+
+            put(COL_CAR_ID, car.id)
+            put(COL_CAR_USER_ID, car.userId)
+            put(COL_COLLECTION_ID_FK, car.collectionId)
+            put(COL_MODEL_CODE, car.modelCode)
+            put(COL_NAME, car.name)
+            put(COL_BRAND, car.brand)
+            put(COL_SERIES_NUMBER, car.seriesNumber)
+            put(COL_COLLECTION_NUMBER, car.collectionNumber)
+            put(COL_COLOR, car.color)
+            put(COL_VEHICLE_TYPE, car.vehicleType)
+            put(COL_PURCHASE_DATE, car.purchaseDate)
+            put(COL_PRICE, car.price)
+            put(COL_STORE, car.store)
+            put(COL_QUANTITY, car.quantity)
+            put(COL_FAVORITE, if (car.favorite) 1 else 0)
+            put(COL_IMAGE_URL, car.imageUrl)
+            put(COL_UPDATED_AT, car.updatedAt)
+        }
+
+        return db.insertWithOnConflict(
+            TABLE_CARS,
+            null,
+            values,
+            SQLiteDatabase.CONFLICT_REPLACE
         )
     }
 
@@ -558,6 +667,17 @@ class DatabaseHelper(context: Context) :
             "$COL_CAR_ID = ?",
             arrayOf(carId.toString())
         )
+
+        getCarById(carId)?.let {
+
+            SyncStatusManager.setState(
+                SyncState.PENDING
+            )
+            SyncManager.syncCar(
+                context,
+                it
+            )
+        }
     }
 
     fun getFavoriteCars(
@@ -622,8 +742,13 @@ class DatabaseHelper(context: Context) :
                 "$COL_COLLECTION_ID = ?",
                 arrayOf(collectionId.toString())
             )
+            SyncManager.deleteCollection(collectionId)
         }
 
+        SyncStatusManager.setState(
+            SyncState.PENDING
+        )
+        SyncManager.deleteCar(carId)
         cursor.close()
     }
 
@@ -641,13 +766,117 @@ class DatabaseHelper(context: Context) :
             put(COL_COLLECTION_NUMBER, car.collectionNumber)
             put(COL_IMAGE_URL, car.imageUrl)
             put(COL_FAVORITE, if (car.favorite) 1 else 0)
+            put(COL_CAR_UPDATED_AT, System.currentTimeMillis())
         }
 
-        return db.update(
+        val result = db.update(
             TABLE_CARS,
             values,
             "$COL_CAR_ID = ?",
             arrayOf(car.id.toString())
+        )
+
+        // =========================
+        // FIRESTORE SYNC
+        // =========================
+        if (result > 0) {
+
+            val updatedCar = car.copy(
+                updatedAt = System.currentTimeMillis()
+            )
+
+            SyncStatusManager.setState(
+                SyncState.PENDING
+            )
+            SyncManager.syncCar(
+                context,
+                updatedCar
+            )
+        }
+
+        return result
+    }
+
+    fun updateCarIfNewer(car: Car) {
+
+        val existing =
+            getCarById(car.id)
+
+        if (existing == null) {
+
+            insertCarLocalOnly(car)
+            return
+        }
+
+        if (car.updatedAt > existing.updatedAt) {
+
+            insertCarLocalOnly(car)
+        }
+    }
+
+    fun updateCollectionIfNewer(
+        collection: Collection
+    ) {
+
+        val existing =
+            getCollectionById(collection.id)
+
+        if (existing == null) {
+
+            insertCollectionLocalOnly(collection)
+            return
+        }
+
+        if (
+            collection.updatedAt >
+            existing.updatedAt
+        ) {
+
+            insertCollectionLocalOnly(collection)
+        }
+    }
+
+    // =========================
+    // MIGRAR DATOS INVITADO
+    // =========================
+    fun migrateGuestDataToUser(newUserId: Int) {
+
+        val guestUser =
+            getUserByEmail("guest@local")
+                ?: return
+
+        val guestId = guestUser.id
+
+        val db = writableDatabase
+
+        // =========================
+        // MOVER COLECCIONES
+        // =========================
+        val collectionValues = ContentValues().apply {
+
+            put(COL_COLLECTION_USER_ID, newUserId)
+        }
+
+        db.update(
+            TABLE_COLLECTIONS,
+            collectionValues,
+            "$COL_COLLECTION_USER_ID = ?",
+            arrayOf(guestId.toString())
+        )
+
+        // =========================
+        // MOVER CARROS
+        // =========================
+        val carValues = ContentValues().apply {
+
+            put(COL_CAR_USER_ID, newUserId)
+        }
+
+        db.update(
+            TABLE_CARS,
+            carValues,
+            "$COL_CAR_USER_ID = ?",
+            arrayOf(guestId.toString())
         )
     }
 
@@ -806,12 +1035,14 @@ class DatabaseHelper(context: Context) :
             put(COL_COLLECTION_USER_ID, collection.userId)
             put(COL_COLLECTION_NAME, collection.name)
             put(COL_COLLECTION_TOTAL, collection.totalCars)
+            put(COL_UPDATED_AT, collection.updatedAt)
         }
 
-        return db.insert(
+        return db.insertWithOnConflict(
             TABLE_COLLECTIONS,
             null,
-            values
+            values,
+            SQLiteDatabase.CONFLICT_REPLACE
         )
     }
 
@@ -861,6 +1092,19 @@ class DatabaseHelper(context: Context) :
             }
         }
 
+        fun getLongSafe(column: String): Long {
+
+            return try {
+
+                cursor.getLong(
+                    cursor.getColumnIndexOrThrow(column)
+                )
+
+            } catch (e: Exception) {
+                System.currentTimeMillis()
+            }
+        }
+
         return Car(
 
             id = getIntSafe(COL_CAR_ID),
@@ -878,7 +1122,8 @@ class DatabaseHelper(context: Context) :
             store = getStringSafe(COL_STORE),
             quantity = getIntSafe(COL_QUANTITY),
             favorite = getIntSafe(COL_FAVORITE) == 1,
-            imageUrl = getStringSafe(COL_IMAGE_URL)
+            imageUrl = getStringSafe(COL_IMAGE_URL),
+            updatedAt = getLongSafe(COL_CAR_UPDATED_AT)
         )
     }
 }

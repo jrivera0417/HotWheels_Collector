@@ -12,9 +12,14 @@ import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.DatabaseHelper
+import com.example.hotwheelscollector.data.FirestoreManager
 import com.example.hotwheelscollector.data.SessionManager
+import com.example.hotwheelscollector.data.SyncPreferences
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
@@ -23,6 +28,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     private lateinit var tvUserName: TextView
     private lateinit var tvUserEmail: TextView
     private lateinit var imgProfile: ImageView
+    private lateinit var tvSyncStatus: TextView
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -50,8 +56,8 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         // =========================
         tvUserName = view.findViewById(R.id.tvUserName)
         tvUserEmail = view.findViewById(R.id.tvUserEmail)
-
         imgProfile = view.findViewById(R.id.imgProfile)
+        tvSyncStatus = view.findViewById(R.id.tvSyncStatus)
 
         // =========================
         // TEMP SESSION STATE
@@ -84,12 +90,55 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         btnSync.setOnClickListener {
-            Toast.makeText(requireContext(), "Sync en desarrollo", Toast.LENGTH_SHORT).show()
+
+            btnSync.isEnabled = false
+
+            Toast.makeText(
+                requireContext(),
+                "Sincronizando...",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            FirestoreManager(requireContext())
+                .syncAllToCloud(
+
+                    onSuccess = {
+
+                        requireActivity().runOnUiThread {
+
+                            btnSync.isEnabled = true
+
+                            Toast.makeText(
+                                requireContext(),
+                                "Colección sincronizada",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    },
+
+                    onError = { error ->
+
+                        requireActivity().runOnUiThread {
+
+                            btnSync.isEnabled = true
+
+                            Toast.makeText(
+                                requireContext(),
+                                error,
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                )
         }
 
         btnLogout.setOnClickListener {
 
             SessionManager.logout()
+
+            requireActivity()
+                .findViewById<ImageView>(R.id.imgSyncStatus)
+                .visibility = View.GONE
 
             Toast.makeText(
                 requireContext(),
@@ -133,6 +182,32 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
             userName = firebaseUser?.displayName ?: "Usuario",
             userEmail = firebaseUser?.email ?: ""
         )
+
+        // =========================
+        // LAST SYNC
+        // =========================
+        val lastSync =
+            SyncPreferences.getLastSync(requireContext())
+
+        if (lastSync == 0L) {
+
+            tvSyncStatus.text =
+                "Última sincronización: Nunca"
+
+        } else {
+
+            val formatter =
+                SimpleDateFormat(
+                    "dd/MM/yyyy HH:mm",
+                    Locale.getDefault()
+                )
+
+            val formattedDate =
+                formatter.format(Date(lastSync))
+
+            tvSyncStatus.text =
+                "Última sincronización: $formattedDate"
+        }
 
         // =========================
         // FOTO PERFIL

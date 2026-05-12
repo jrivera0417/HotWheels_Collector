@@ -3,6 +3,7 @@ package com.example.hotwheelscollector
 import android.os.Bundle
 import android.view.View
 import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -10,9 +11,15 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import com.example.hotwheelscollector.data.DatabaseHelper
+import com.example.hotwheelscollector.data.FirestoreManager
+import com.example.hotwheelscollector.data.NetworkMonitor
 import com.example.hotwheelscollector.data.SessionManager
+import com.example.hotwheelscollector.data.SyncState
+import com.example.hotwheelscollector.data.SyncStatusManager
 import com.example.hotwheelscollector.ui.notifications.NotificationBottomSheet
 import com.example.hotwheelscollector.ui.settings.CollectorSetupBottomSheet
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,6 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var db: DatabaseHelper
     private lateinit var notificationDot: View
+    private lateinit var imgSyncStatus: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -47,9 +55,93 @@ class MainActivity : AppCompatActivity() {
         }
 
         super.onCreate(savedInstanceState)
+
+        val firebaseUser =
+            FirebaseAuth.getInstance().currentUser
+
+        if (firebaseUser != null) {
+
+            FirestoreManager(this)
+                .restoreFromCloud(
+                    onSuccess = {
+
+                    },
+                    onError = {
+
+                    }
+                )
+        }
+
         setContentView(R.layout.activity_main)
 
         db = DatabaseHelper(this)
+
+        val networkMonitor = NetworkMonitor(this)
+
+        networkMonitor.registerCallback(
+
+            onConnected = {
+
+                runOnUiThread {
+
+                    SyncStatusManager.setState(
+                        SyncState.SYNCING
+                    )
+
+                    val firebaseUser =
+                        FirebaseAuth.getInstance().currentUser
+
+                    if (firebaseUser != null) {
+
+                        FirestoreManager(this)
+                            .syncAllToCloud(
+
+                                onSuccess = {
+
+                                    runOnUiThread {
+
+                                        SyncStatusManager.setState(
+                                            SyncState.SYNCED
+                                        )
+                                    }
+                                },
+
+                                onError = {
+
+                                    runOnUiThread {
+
+                                        SyncStatusManager.setState(
+                                            SyncState.PENDING
+                                        )
+                                    }
+                                }
+                            )
+                    } else {
+
+                        SyncStatusManager.setState(
+                            SyncState.SYNCED
+                        )
+                    }
+                }
+            },
+
+            onDisconnected = {
+
+                runOnUiThread {
+
+                    SyncStatusManager.setState(
+                        SyncState.OFFLINE
+                    )
+                }
+            }
+        )
+
+        if (!networkMonitor.isConnected()) {
+
+            SyncStatusManager.setState(
+                SyncState.OFFLINE
+            )
+        }
 
         // =========================
         // ESTADO NAV
@@ -117,10 +209,21 @@ class MainActivity : AppCompatActivity() {
         val layoutNotifications =
             findViewById<View>(R.id.layoutNotifications)
 
+        imgSyncStatus =
+            findViewById<ImageView>(R.id.imgSyncStatus)
+
         notificationDot =
             findViewById(R.id.viewNotificationDot)
 
         refreshNotificationDot()
+
+        SyncStatusManager.observe { state ->
+
+            runOnUiThread {
+
+                updateSyncIcon(state)
+            }
+        }
 
         // =========================
         // CLICK NOTIFICATIONS
@@ -322,6 +425,12 @@ class MainActivity : AppCompatActivity() {
                     layoutNotifications.visibility =
                         View.VISIBLE
 
+                    imgSyncStatus.visibility =
+                        if (FirebaseAuth.getInstance().currentUser != null)
+                            View.VISIBLE
+                        else
+                            View.GONE
+
                     refreshNotificationDot()
                 }
 
@@ -331,6 +440,12 @@ class MainActivity : AppCompatActivity() {
 
                     layoutNotifications.visibility =
                         View.GONE
+
+                    imgSyncStatus.visibility =
+                        if (FirebaseAuth.getInstance().currentUser != null)
+                            View.VISIBLE
+                        else
+                            View.GONE
                 }
 
                 R.id.nav_favorites -> {
@@ -339,6 +454,8 @@ class MainActivity : AppCompatActivity() {
 
                     layoutNotifications.visibility =
                         View.GONE
+
+                    imgSyncStatus.visibility = View.GONE
                 }
 
                 R.id.nav_profile -> {
@@ -347,6 +464,8 @@ class MainActivity : AppCompatActivity() {
 
                     layoutNotifications.visibility =
                         View.GONE
+
+                    imgSyncStatus.visibility = View.GONE
                 }
 
                 else -> {
@@ -355,6 +474,8 @@ class MainActivity : AppCompatActivity() {
 
                     layoutNotifications.visibility =
                         View.GONE
+
+                    imgSyncStatus.visibility = View.GONE
                 }
             }
 
@@ -409,6 +530,12 @@ class MainActivity : AppCompatActivity() {
                     layoutNotifications.visibility =
                         View.VISIBLE
 
+                    imgSyncStatus.visibility =
+                        if (FirebaseAuth.getInstance().currentUser != null)
+                            View.VISIBLE
+                        else
+                            View.GONE
+
                     refreshNotificationDot()
                 }
 
@@ -420,6 +547,12 @@ class MainActivity : AppCompatActivity() {
 
                     layoutNotifications.visibility =
                         View.GONE
+
+                    imgSyncStatus.visibility =
+                        if (FirebaseAuth.getInstance().currentUser != null)
+                            View.VISIBLE
+                        else
+                            View.GONE
                 }
 
                 R.id.nav_favorites -> {
@@ -430,6 +563,8 @@ class MainActivity : AppCompatActivity() {
 
                     layoutNotifications.visibility =
                         View.GONE
+
+                    imgSyncStatus.visibility = View.GONE
                 }
 
                 R.id.nav_profile -> {
@@ -440,6 +575,8 @@ class MainActivity : AppCompatActivity() {
 
                     layoutNotifications.visibility =
                         View.GONE
+
+                    imgSyncStatus.visibility = View.GONE
                 }
             }
         }
@@ -455,5 +592,84 @@ class MainActivity : AppCompatActivity() {
                 View.VISIBLE
             else
                 View.GONE
+    }
+
+    // =========================
+// SYNC ICON
+// =========================
+    private fun updateSyncIcon(
+        state: SyncState
+    ) {
+
+        val firebaseUser: FirebaseUser? =
+            FirebaseAuth.getInstance().currentUser
+
+        // =========================
+        // SOLO USUARIOS LOGUEADOS
+        // =========================
+        if (firebaseUser == null) {
+
+            imgSyncStatus.visibility = View.GONE
+            return
+        }
+
+        imgSyncStatus.visibility = View.VISIBLE
+
+        imgSyncStatus.animate().cancel()
+        imgSyncStatus.rotation = 0f
+
+        when (state) {
+
+            SyncState.PENDING -> {
+
+                imgSyncStatus.setImageResource(
+                    R.drawable.ic_cloud_upload
+                )
+            }
+
+            SyncState.SYNCING -> {
+
+                imgSyncStatus.animate().cancel()
+
+                imgSyncStatus.setImageResource(
+                    R.drawable.ic_cloud_sync
+                )
+
+                imgSyncStatus.animate()
+                    .rotation(360f)
+                    .setDuration(900)
+                    .setInterpolator(
+                        LinearInterpolator()
+                    )
+                    .withEndAction {
+
+                        updateSyncIcon(
+                            SyncStatusManager.getState()
+                        )
+                    }
+                    .start()
+            }
+
+            SyncState.SYNCED -> {
+
+                imgSyncStatus.setImageResource(
+                    R.drawable.ic_cloud_done
+                )
+            }
+
+            SyncState.OFFLINE -> {
+
+                imgSyncStatus.setImageResource(
+                    R.drawable.ic_cloud_off
+                )
+            }
+
+            SyncState.ERROR -> {
+
+                imgSyncStatus.setImageResource(
+                    R.drawable.ic_cloud_off
+                )
+            }
+        }
     }
 }

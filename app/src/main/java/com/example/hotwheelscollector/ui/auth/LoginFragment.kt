@@ -11,11 +11,13 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.DatabaseHelper
+import com.example.hotwheelscollector.data.FirestoreManager
 import com.example.hotwheelscollector.data.User
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.ApiException
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
@@ -107,8 +109,8 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
             )
 
         val btnGoogle =
-            view.findViewById<com.google.android.gms.common.SignInButton>(
-                R.id.btnGoogle
+            view.findViewById<SignInButton>(
+                R.id.btnGoogleLogin
             )
 
         val tvGoRegister =
@@ -164,14 +166,67 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
 
                 if (task.isSuccessful) {
 
-                    Toast.makeText(
-                        requireContext(),
-                        "Sesión iniciada",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    val firebaseUser =
+                        auth.currentUser
 
-                    findNavController()
-                        .popBackStack()
+                    if (firebaseUser != null) {
+
+                        val db =
+                            DatabaseHelper(requireContext())
+
+                        var localUser =
+                            db.getUserByFirebaseUid(
+                                firebaseUser.uid
+                            )
+
+                        // =========================
+                        // CREAR USUARIO SQLITE
+                        // =========================
+                        if (localUser == null) {
+
+                            db.insertUser(
+                                User(
+                                    name = firebaseUser.displayName
+                                        ?: "Usuario",
+
+                                    email = firebaseUser.email
+                                        ?: "",
+
+                                    password = "",
+
+                                    firebaseUid =
+                                        firebaseUser.uid
+                                )
+                            )
+
+                            localUser =
+                                db.getUserByFirebaseUid(
+                                    firebaseUser.uid
+                                )
+                        }
+
+                        // =========================
+                        // MIGRAR DATOS INVITADO
+                        // =========================
+                        localUser?.let {
+
+                            db.migrateGuestDataToUser(
+                                it.id
+                            )
+                        }
+                    }
+
+                    restoreCloudData {
+
+                        Toast.makeText(
+                            requireContext(),
+                            "Sesión iniciada",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        findNavController()
+                            .popBackStack()
+                    }
 
                 } else {
 
@@ -236,29 +291,25 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
                 if (firebaseUser != null) {
 
                     val db =
-                        DatabaseHelper(
-                            requireContext()
-                        )
+                        DatabaseHelper(requireContext())
 
-                    val existingUser =
+                    var localUser =
                         db.getUserByFirebaseUid(
                             firebaseUser.uid
                         )
 
                     // =========================
-                    // CREATE SQLITE USER
+                    // CREAR USUARIO SQLITE
                     // =========================
-                    if (existingUser == null) {
+                    if (localUser == null) {
 
                         db.insertUser(
                             User(
-                                name =
-                                    firebaseUser.displayName
-                                        ?: "Usuario",
+                                name = firebaseUser.displayName
+                                    ?: "Usuario",
 
-                                email =
-                                    firebaseUser.email
-                                        ?: "",
+                                email = firebaseUser.email
+                                    ?: "",
 
                                 password = "",
 
@@ -266,26 +317,73 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
                                     firebaseUser.uid
                             )
                         )
+
+                        localUser =
+                            db.getUserByFirebaseUid(
+                                firebaseUser.uid
+                            )
+                    }
+
+                    // =========================
+                    // MIGRAR DATOS INVITADO
+                    // =========================
+                    localUser?.let {
+
+                        db.migrateGuestDataToUser(
+                            it.id
+                        )
                     }
                 }
 
-                Toast.makeText(
-                    requireContext(),
-                    "Bienvenido 🚀",
-                    Toast.LENGTH_SHORT
-                ).show()
+                restoreCloudData {
 
-                findNavController()
-                    .popBackStack()
+                    Toast.makeText(
+                        requireContext(),
+                        "Sesión iniciada",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    findNavController()
+                        .popBackStack()
+                }
 
             } else {
 
                 Toast.makeText(
                     requireContext(),
-                    "Error autenticando Google",
+                    task.exception?.message
+                        ?: "Error de login",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
+    }
+
+    // =========================
+    // RESTORE CLOUD DATA
+    // =========================
+    private fun restoreCloudData(
+        onComplete: () -> Unit
+    ) {
+
+        FirestoreManager(requireContext())
+            .restoreFromCloud(
+
+                onSuccess = {
+
+                    requireActivity().runOnUiThread {
+
+                        onComplete()
+                    }
+                },
+
+                onError = {
+
+                    requireActivity().runOnUiThread {
+
+                        onComplete()
+                    }
+                }
+            )
     }
 }

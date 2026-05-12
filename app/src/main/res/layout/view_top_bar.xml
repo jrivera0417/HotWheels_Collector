@@ -71,6 +71,19 @@
             android:visibility="gone"/>
     </FrameLayout>
 
+    <!-- Estado sincronización -->
+    <ImageView
+        android:id="@+id/imgSyncStatus"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="12dp"
+        android:visibility="gone"
+        android:contentDescription="Estado sincronización"
+        android:src="@drawable/ic_cloud_done"
+        app:layout_constraintEnd_toStartOf="@id/layoutNotifications"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
     <!-- Personalizacion de aspecto -->
     <ImageView
         android:id="@+id/ivTune"

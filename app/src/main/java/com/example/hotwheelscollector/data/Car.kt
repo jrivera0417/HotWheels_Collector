@@ -16,5 +16,6 @@ data class Car(
     val store: String = "",
     val quantity: Int = 1,
     val favorite: Boolean = false,
-    val imageUrl: String = ""
+    val imageUrl: String = "",
+    val updatedAt: Long = System.currentTimeMillis()
 )
