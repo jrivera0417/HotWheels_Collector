@@ -19,6 +19,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.DatabaseHelper
 import com.example.hotwheelscollector.data.SessionManager
+import com.example.hotwheelscollector.data.User
 import com.example.hotwheelscollector.utils.FavoriteEvents
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
@@ -29,7 +30,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         super.onViewCreated(view, savedInstanceState)
 
         val db = DatabaseHelper(requireContext())
+        val tvTitle = view.findViewById<TextView>(R.id.tvTitle)
         val userId = SessionManager.getCurrentUserId(requireContext())
+
+        val user = SessionManager.getLocalUser(requireContext())
+        updateHeader(tvTitle, user)
+
         var cachedCars = db.getCarsByUser(userId)
 
         //VIEWS
@@ -231,6 +237,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         //NAV A COLECCIÓN
         btnCollection.setOnClickListener {
             findNavController().navigate(R.id.nav_collection)
+        }
+    }
+
+    private fun updateHeader(tvTitle: TextView, user: User?) {
+
+        tvTitle.text = if (user == null) {
+            "Bienvenido 👋"
+        } else {
+            "Bienvenido, ${user.name}"
         }
     }
 
