@@ -226,6 +226,48 @@ class MainActivity : AppCompatActivity() {
         }
 
         // =========================
+        // CLICK CLOUD STATUS
+        // =========================
+        imgSyncStatus.setOnClickListener {
+
+            val message = when (
+                SyncStatusManager.getState()
+            ) {
+
+                SyncState.SYNCED -> {
+
+                    "Colección sincronizada correctamente"
+                }
+
+                SyncState.PENDING -> {
+
+                    "Hay cambios pendientes por sincronizar"
+                }
+
+                SyncState.SYNCING -> {
+
+                    "Sincronizando colección..."
+                }
+
+                SyncState.OFFLINE -> {
+
+                    "Sin conexión a internet"
+                }
+
+                SyncState.ERROR -> {
+
+                    "Error de sincronización"
+                }
+            }
+
+            android.widget.Toast.makeText(
+                this,
+                message,
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        // =========================
         // CLICK NOTIFICATIONS
         // =========================
         layoutNotifications.setOnClickListener {
@@ -595,8 +637,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     // =========================
-// SYNC ICON
-// =========================
+    // SYNC ICON
+    // =========================
     private fun updateSyncIcon(
         state: SyncState
     ) {

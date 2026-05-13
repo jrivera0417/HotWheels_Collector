@@ -15,11 +15,11 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.google.firebase.auth.FirebaseAuth
 import androidx.navigation.fragment.findNavController
 import com.example.hotwheelscollector.R
 import com.example.hotwheelscollector.data.DatabaseHelper
 import com.example.hotwheelscollector.data.SessionManager
-import com.example.hotwheelscollector.data.User
 import com.example.hotwheelscollector.utils.FavoriteEvents
 
 class HomeFragment : Fragment(R.layout.fragment_home) {
@@ -34,7 +34,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val userId = SessionManager.getCurrentUserId(requireContext())
 
         val user = SessionManager.getLocalUser(requireContext())
-        updateHeader(tvTitle, user)
+        updateHeader(tvTitle)
 
         var cachedCars = db.getCarsByUser(userId)
 
@@ -240,13 +240,23 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
-    private fun updateHeader(tvTitle: TextView, user: User?) {
+    private fun updateHeader(tvTitle: TextView) {
 
-        tvTitle.text = if (user == null) {
-            "Bienvenido 👋"
-        } else {
-            "Bienvenido, ${user.name}"
-        }
+        val firebaseUser =
+            FirebaseAuth.getInstance().currentUser
+
+        val name =
+            firebaseUser?.displayName
+
+        tvTitle.text =
+            if (name.isNullOrEmpty()) {
+
+                "Bienvenido 👋"
+
+            } else {
+
+                "Bienvenido, $name"
+            }
     }
 
     override fun onResume() {

@@ -168,8 +168,8 @@
             <!-- Avatar -->
             <ImageView
                 android:id="@+id/imgProfile"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
                 android:src="@drawable/ic_profile"
                 android:scaleType="centerCrop"
                 android:background="@drawable/bg_profile_border"
@@ -195,6 +195,16 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 android:layout_marginTop="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEditProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Editar perfil"
+                android:textAllCaps="false"
+                android:textSize="14sp"
+                app:cornerRadius="12dp"/>
 
             <!-- Estado Sync -->
             <TextView

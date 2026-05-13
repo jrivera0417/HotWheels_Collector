@@ -18,7 +18,7 @@ class DatabaseHelper(
     companion object {
 
         const val DATABASE_NAME = "cars.db"
-        const val DATABASE_VERSION = 11
+        const val DATABASE_VERSION = 13
 
         // =========================
         // TABLAS
@@ -36,6 +36,7 @@ class DatabaseHelper(
         const val COL_USER_EMAIL = "email"
         const val COL_USER_PASSWORD = "password"
         const val COL_USER_FIREBASE_UID = "firebase_uid"
+        const val COL_USER_PROFILE_IMAGE = "profile_image"
 
         // =========================
         // COLLECTIONS
@@ -88,7 +89,8 @@ class DatabaseHelper(
                 $COL_USER_NAME TEXT,
                 $COL_USER_EMAIL TEXT UNIQUE,
                 $COL_USER_PASSWORD TEXT,
-                $COL_USER_FIREBASE_UID TEXT
+                $COL_USER_FIREBASE_UID TEXT,
+                $COL_USER_PROFILE_IMAGE TEXT
             )
         """)
 
@@ -150,12 +152,15 @@ class DatabaseHelper(
         newVersion: Int
     ) {
 
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_CARS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_COLLECTIONS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_NOTIFICATIONS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_USERS")
+        if (oldVersion < 13) {
 
-        onCreate(db)
+            db.execSQL(
+                """
+            ALTER TABLE $TABLE_USERS
+            ADD COLUMN $COL_USER_PROFILE_IMAGE TEXT
+            """.trimIndent()
+            )
+        }
     }
 
     // =========================
@@ -320,6 +325,78 @@ class DatabaseHelper(
 
             null
         }
+    }
+
+    fun updateUserProfileImage(
+        userId: Int,
+        imageUri: String
+    ) {
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+
+            put(
+                COL_USER_PROFILE_IMAGE,
+                imageUri
+            )
+        }
+
+        db.update(
+            TABLE_USERS,
+            values,
+            "$COL_USER_ID = ?",
+            arrayOf(userId.toString())
+        )
+    }
+
+    fun saveProfileImage(userId: Int, base64Image: String) {
+
+        val db = writableDatabase
+
+        val values = ContentValues().apply {
+
+            put(
+                COL_USER_PROFILE_IMAGE,
+                base64Image
+            )
+        }
+
+        db.update(
+            TABLE_USERS,
+            values,
+            "$COL_USER_ID = ?",
+            arrayOf(userId.toString())
+        )
+    }
+
+    fun getProfileImage(userId: Int): String? {
+
+        val db = readableDatabase
+
+        val cursor = db.rawQuery(
+            """
+        SELECT $COL_USER_PROFILE_IMAGE
+        FROM $TABLE_USERS
+        WHERE $COL_USER_ID = ?
+        """.trimIndent(),
+            arrayOf(userId.toString())
+        )
+
+        var image: String? = null
+
+        if (cursor.moveToFirst()) {
+
+            image = cursor.getString(
+                cursor.getColumnIndexOrThrow(
+                    COL_USER_PROFILE_IMAGE
+                )
+            )
+        }
+
+        cursor.close()
+
+        return image
     }
 
     // =========================
