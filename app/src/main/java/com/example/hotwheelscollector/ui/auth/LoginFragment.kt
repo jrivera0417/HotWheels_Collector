@@ -10,9 +10,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.hotwheelscollector.R
-import com.example.hotwheelscollector.data.DatabaseHelper
-import com.example.hotwheelscollector.data.FirestoreManager
-import com.example.hotwheelscollector.data.User
+import com.example.hotwheelscollector.data.local.DatabaseHelper
+import com.example.hotwheelscollector.data.cloud.FirestoreManager
+import com.example.hotwheelscollector.data.models.User
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient

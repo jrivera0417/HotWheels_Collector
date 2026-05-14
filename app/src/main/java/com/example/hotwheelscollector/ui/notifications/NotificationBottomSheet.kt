@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.hotwheelscollector.R
-import com.example.hotwheelscollector.data.DatabaseHelper
+import com.example.hotwheelscollector.data.local.DatabaseHelper
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 class NotificationBottomSheet :

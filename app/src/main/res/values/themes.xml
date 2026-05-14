@@ -2,7 +2,7 @@
 
     <style name="Theme.HotWheelsCollector" parent="Theme.Material3.DayNight.NoActionBar">
 
-        <!-- PRIMARY -->
+        <!-- TEXT PRIMARY -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/text_primary</item>
         <item name="colorSecondary">@color/primary_variant</item>

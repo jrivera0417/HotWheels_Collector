@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_export"
+        android:title="Exportar" />
+
+    <item
+        android:id="@+id/menu_import"
+        android:title="Importar" />
+
+    <item
+        android:id="@+id/menu_statistics"
+        android:title="Estadísticas" />
+
+    <item
+        android:id="@+id/menu_about"
+        android:title="Acerca de la app" />
+
+    <item
+        android:id="@+id/menu_privacy"
+        android:title="Política de privacidad" />
+
+</menu>

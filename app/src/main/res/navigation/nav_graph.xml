@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/nav_home"
-        android:name="com.example.hotwheelscollector.ui.HomeFragment">
+        android:name="com.example.hotwheelscollector.ui.home.HomeFragment">
 
         <action
             android:id="@+id/action_home_to_collection"
@@ -16,16 +16,16 @@
 
     <fragment
         android:id="@+id/nav_collection"
-        android:name="com.example.hotwheelscollector.ui.ColeccionFragment" />
+        android:name="com.example.hotwheelscollector.ui.collection.ColeccionFragment" />
 
     <fragment
         android:id="@+id/carDetailFragment"
-        android:name="com.example.hotwheelscollector.ui.CarDetailFragment"
+        android:name="com.example.hotwheelscollector.ui.collection.CarDetailFragment"
         android:label="Car Detail" />
 
     <fragment
         android:id="@+id/editCarFragment"
-        android:name="com.example.hotwheelscollector.ui.EditCarFragment"
+        android:name="com.example.hotwheelscollector.ui.collection.EditCarFragment"
         android:label="Editar Auto" />
 
     <action
@@ -34,7 +34,7 @@
 
     <fragment
         android:id="@+id/nav_favorites"
-        android:name="com.example.hotwheelscollector.ui.FavoritesFragment" >
+        android:name="com.example.hotwheelscollector.ui.favorites.FavoritesFragment" >
 
         <action
             android:id="@+id/action_nav_favorites_to_nav_collection"
@@ -43,7 +43,7 @@
 
     <fragment
         android:id="@+id/nav_profile"
-        android:name="com.example.hotwheelscollector.ui.ProfileFragment" />
+        android:name="com.example.hotwheelscollector.ui.profile.ProfileFragment" />
 
     <fragment
         android:id="@+id/loginFragment"
@@ -61,5 +61,20 @@
         android:name="com.example.hotwheelscollector.ui.auth.RegisterFragment"
         android:label="Register"
         tools:layout="@layout/fragment_register"/>
+
+    <fragment
+        android:id="@+id/statisticsFragment"
+        android:name="com.example.hotwheelscollector.ui.statistics.StatisticsFragment"
+        android:label="StatisticsFragment" />
+
+    <fragment
+        android:id="@+id/aboutFragment"
+        android:name="com.example.hotwheelscollector.ui.about.AboutFragment"
+        android:label="AboutFragment" />
+
+    <fragment
+        android:id="@+id/privacyFragment"
+        android:name="com.example.hotwheelscollector.ui.privacy.PrivacyFragment"
+        android:label="PrivacyFragment" />
 
 </navigation>

@@ -5,17 +5,23 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
-import com.example.hotwheelscollector.data.DatabaseHelper
-import com.example.hotwheelscollector.data.FirestoreManager
-import com.example.hotwheelscollector.data.NetworkMonitor
-import com.example.hotwheelscollector.data.SessionManager
-import com.example.hotwheelscollector.data.SyncState
-import com.example.hotwheelscollector.data.SyncStatusManager
+import com.example.hotwheelscollector.data.notifications.AppNotification
+import com.example.hotwheelscollector.data.local.DatabaseHelper
+import com.example.hotwheelscollector.data.backup.FileExporter
+import com.example.hotwheelscollector.data.backup.FileImporter
+import com.example.hotwheelscollector.data.cloud.FirestoreManager
+import com.example.hotwheelscollector.data.network.NetworkMonitor
+import com.example.hotwheelscollector.data.local.SessionManager
+import com.example.hotwheelscollector.data.cloud.SyncState
+import com.example.hotwheelscollector.data.cloud.SyncStatusManager
 import com.example.hotwheelscollector.ui.notifications.NotificationBottomSheet
 import com.example.hotwheelscollector.ui.settings.CollectorSetupBottomSheet
 import com.google.firebase.auth.FirebaseAuth
@@ -23,11 +29,22 @@ import com.google.firebase.auth.FirebaseUser
 
 class MainActivity : AppCompatActivity() {
 
+    private val importLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+
+            if (uri != null) {
+
+                FileImporter(this)
+                    .importCollection(uri)
+            }
+        }
+
     private var currentDestinationId: Int = R.id.nav_home
 
     private lateinit var db: DatabaseHelper
     private lateinit var notificationDot: View
     private lateinit var imgSyncStatus: ImageView
+    private lateinit var ivMenu: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -56,8 +73,7 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
-        val firebaseUser =
-            FirebaseAuth.getInstance().currentUser
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
 
         if (firebaseUser != null) {
 
@@ -103,6 +119,20 @@ class MainActivity : AppCompatActivity() {
                                         SyncStatusManager.setState(
                                             SyncState.SYNCED
                                         )
+
+                                        // =========================
+                                        // NOTIFICACIÓN DE SYNC
+                                        // =========================
+                                        db.insertNotification(
+                                            AppNotification(
+                                                title = "Sincronización completada",
+                                                message = "Tu colección fue sincronizada correctamente con la nube.",
+                                                timestamp = System.currentTimeMillis(),
+                                                isRead = false
+                                            )
+                                        )
+
+                                        refreshNotificationDot()
                                     }
                                 },
 
@@ -188,32 +218,26 @@ class MainActivity : AppCompatActivity() {
         // =========================
         val home = findViewById<View>(R.id.nav_home)
 
-        val collection =
-            findViewById<View>(R.id.nav_collection)
+        val collection = findViewById<View>(R.id.nav_collection)
 
-        val favorites =
-            findViewById<View>(R.id.nav_favorites)
+        val favorites = findViewById<View>(R.id.nav_favorites)
 
-        val profile =
-            findViewById<View>(R.id.nav_profile)
+        val profile = findViewById<View>(R.id.nav_profile)
 
-        val indicator =
-            findViewById<View>(R.id.nav_indicator)
+        val indicator = findViewById<View>(R.id.nav_indicator)
 
         // =========================
         // TOP BAR
         // =========================
-        val ivTune =
-            findViewById<ImageView>(R.id.ivTune)
+        val ivTune = findViewById<ImageView>(R.id.ivTune)
 
-        val layoutNotifications =
-            findViewById<View>(R.id.layoutNotifications)
+        val layoutNotifications = findViewById<View>(R.id.layoutNotifications)
 
-        imgSyncStatus =
-            findViewById<ImageView>(R.id.imgSyncStatus)
+        imgSyncStatus = findViewById<ImageView>(R.id.imgSyncStatus)
 
-        notificationDot =
-            findViewById(R.id.viewNotificationDot)
+        ivMenu = findViewById(R.id.ivMenu)
+
+        notificationDot = findViewById(R.id.viewNotificationDot)
 
         refreshNotificationDot()
 
@@ -293,6 +317,113 @@ class MainActivity : AppCompatActivity() {
                     supportFragmentManager,
                     "collector_setup"
                 )
+        }
+
+        // =========================
+        // CLICK MENU
+        // =========================
+        ivMenu.setOnClickListener { view ->
+
+            val popupMenu =
+                PopupMenu(this, view)
+
+            popupMenu.menuInflater.inflate(
+                R.menu.topbar_menu,
+                popupMenu.menu
+            )
+
+            for (i in 0 until popupMenu.menu.size()) {
+
+                val item = popupMenu.menu.getItem(i)
+
+                val spannable = android.text.SpannableString(item.title)
+
+                spannable.setSpan(
+                    android.text.style.ForegroundColorSpan(
+                        getColor(R.color.text_primary)
+                    ),
+                    0,
+                    spannable.length,
+                    0
+                )
+
+                item.title = spannable
+            }
+
+            val isLoggedIn =
+                FirebaseAuth.getInstance().currentUser != null
+
+            // =========================
+            // SOLO USUARIOS LOGUEADOS
+            // =========================
+            popupMenu.menu
+                .findItem(R.id.menu_statistics)
+                ?.isVisible = isLoggedIn
+
+            popupMenu.setOnMenuItemClickListener { item ->
+
+                when (item.itemId) {
+
+                    R.id.menu_export -> {
+
+                        FileExporter(this)
+                            .exportCollection()
+
+                        true
+                    }
+
+                    R.id.menu_import -> {
+
+                        importLauncher.launch(
+                            "application/json"
+                        )
+
+                        true
+                    }
+
+                    R.id.menu_statistics -> {
+
+                        if (FirebaseAuth.getInstance().currentUser != null) {
+
+                            navController.navigate(
+                                R.id.statisticsFragment
+                            )
+
+                        } else {
+
+                            Toast.makeText(
+                                this,
+                                "Disponible solo para usuarios registrados",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        true
+                    }
+
+                    R.id.menu_about -> {
+
+                        navController.navigate(
+                            R.id.aboutFragment
+                        )
+
+                        true
+                    }
+
+                    R.id.menu_privacy -> {
+
+                        navController.navigate(
+                            R.id.privacyFragment
+                        )
+
+                        true
+                    }
+
+                    else -> false
+                }
+            }
+
+            popupMenu.show()
         }
 
         // =========================

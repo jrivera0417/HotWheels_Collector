@@ -7,8 +7,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.example.hotwheelscollector.data.DatabaseHelper
-import com.example.hotwheelscollector.data.User
+import com.example.hotwheelscollector.data.local.DatabaseHelper
+import com.example.hotwheelscollector.data.models.User
 import com.example.hotwheelscollector.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText

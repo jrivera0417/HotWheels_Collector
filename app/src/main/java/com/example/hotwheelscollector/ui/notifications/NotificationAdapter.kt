@@ -7,7 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.hotwheelscollector.R
-import com.example.hotwheelscollector.data.AppNotification
+import com.example.hotwheelscollector.data.notifications.AppNotification
 import java.text.SimpleDateFormat
 import java.util.*
 
