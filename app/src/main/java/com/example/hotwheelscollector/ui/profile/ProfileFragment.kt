@@ -17,6 +17,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.example.hotwheelscollector.MainActivity
 import com.example.hotwheelscollector.R
@@ -388,6 +389,10 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                     Glide.with(requireContext())
                         .load(firebaseUser.photoUrl)
                         .circleCrop()
+                        .skipMemoryCache(true)
+                        .diskCacheStrategy(
+                            DiskCacheStrategy.NONE
+                        )
                         .placeholder(R.drawable.ic_profile)
                         .into(imgProfile)
 
