@@ -148,22 +148,15 @@ class FirestoreManager(
             SessionManager.getCurrentUserId(context)
 
         // =========================
-        // EVITAR DUPLICADOS
+        // SINCRONIZAR SIEMPRE
         // =========================
         val existingCars =
             db.getCarsByUser(localUserId)
 
-        if (existingCars.isNotEmpty()) {
-
-            SyncPreferences.saveLastSync(context)
-
-            SyncStatusManager.setState(
-                SyncState.SYNCED
-            )
-
-            onSuccess()
-            return
-        }
+        android.util.Log.d(
+            "SYNC_DEBUG",
+            "Local cars before restore = ${existingCars.size}"
+        )
 
         // =========================
         // DESCARGAR COLECCIONES

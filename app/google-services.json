@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "899537051369",
+    "firebase_url": "https://hotwheelscollector-61ddf-default-rtdb.firebaseio.com",
     "project_id": "hotwheelscollector-61ddf",
     "storage_bucket": "hotwheelscollector-61ddf.firebasestorage.app"
   },
@@ -19,6 +20,14 @@
           "android_info": {
             "package_name": "com.example.hotwheelscollector",
             "certificate_hash": "1968aaa9fbc8b79ee2583336ea8fc1ad1f04d90b"
+          }
+        },
+        {
+          "client_id": "899537051369-r67tm7sb0invm9vnkv6rs3f6lqkelab3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hotwheelscollector",
+            "certificate_hash": "da9035159f08b5806495b69daca264b4af311ba3"
           }
         },
         {

@@ -176,15 +176,31 @@
                 android:padding="3dp" />
 
             <!-- Nombre -->
-            <TextView
-                android:id="@+id/tvUserName"
+            <LinearLayout
+                android:id="@+id/layoutUserName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Usuario"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:layout_marginTop="16dp" />
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvUserName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Usuario"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"/>
+
+                <ImageView
+                    android:id="@+id/imgEditName"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginStart="8dp"
+                    android:src="@drawable/ic_edit"
+                    app:tint="@color/text_secondary"/>
+            </LinearLayout>
 
             <!-- Email -->
             <TextView
@@ -195,16 +211,6 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
                 android:layout_marginTop="6dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnEditProfile"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="Editar perfil"
-                android:textAllCaps="false"
-                android:textSize="14sp"
-                app:cornerRadius="12dp"/>
 
             <!-- Estado Sync -->
             <TextView

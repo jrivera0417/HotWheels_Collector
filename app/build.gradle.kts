@@ -17,6 +17,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+
+        create("release") {
+
+            storeFile = file("C:/Users/jaide/hotwheels-release-key")
+
+            storePassword = "H0tWh33l5Pr0y3ct0"
+
+            keyAlias = "hotwheelskey"
+
+            keyPassword = "H0tWh33l5Pr0y3ct0"
+        }
+    }
+
     buildFeatures {
         viewBinding = true
     }
@@ -28,6 +42,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

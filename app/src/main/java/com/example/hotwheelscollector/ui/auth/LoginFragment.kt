@@ -245,10 +245,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         // =========================
         btnGoogle.setOnClickListener {
 
-            googleSignInClient.signOut()
-
-            val signInIntent =
-                googleSignInClient.signInIntent
+            val signInIntent = googleSignInClient.signInIntent
 
             googleLauncher.launch(signInIntent)
         }

@@ -1,6 +1,7 @@
 package com.example.hotwheelscollector
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
@@ -48,10 +49,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
-        SessionManager.getOrCreateGuestUser(this)
-
         // =========================
-        // TEMA DINÁMICO (HOT WHEELS)
+        // TEMA DINÁMICO
         // =========================
         val prefs = getSharedPreferences(
             "collector_prefs",
@@ -73,24 +72,66 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
-        val firebaseUser = FirebaseAuth.getInstance().currentUser
-
-        if (firebaseUser != null) {
-
-            FirestoreManager(this)
-                .restoreFromCloud(
-                    onSuccess = {
-
-                    },
-                    onError = {
-
-                    }
-                )
-        }
-
         setContentView(R.layout.activity_main)
 
+        // =========================
+        // DATABASE
+        // =========================
         db = DatabaseHelper(this)
+
+        // =========================
+        // GUEST USER
+        // =========================
+        SessionManager.getOrCreateGuestUser(this)
+
+        // =========================
+        // FIREBASE SESSION
+        // =========================
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+
+        Log.d("SESSION_DEBUG", "Firebase User = ${firebaseUser?.email}")
+
+        val auth = FirebaseAuth.getInstance()
+
+        Log.d("SESSION_DEBUG", "UID: ${auth.currentUser?.uid}")
+        Log.d("SESSION_DEBUG", "Email: ${auth.currentUser?.email}")
+
+        // =========================
+        // RESTORE SQLITE USER
+        // =========================
+        if (firebaseUser != null) {
+
+            var localUser =
+                db.getUserByFirebaseUid(
+                    firebaseUser.uid
+                )
+
+            if (localUser == null) {
+
+                db.insertUser(
+                    com.example.hotwheelscollector.data.models.User(
+                        name = firebaseUser.displayName
+                            ?: "Usuario",
+
+                        email = firebaseUser.email
+                            ?: "",
+
+                        password = "",
+
+                        firebaseUid = firebaseUser.uid
+                    )
+                )
+            }
+
+            // =========================
+            // RESTORE CLOUD
+            // =========================
+            FirestoreManager(this)
+                .restoreFromCloud(
+                    onSuccess = {},
+                    onError = {}
+                )
+        }
 
         val networkMonitor = NetworkMonitor(this)
 

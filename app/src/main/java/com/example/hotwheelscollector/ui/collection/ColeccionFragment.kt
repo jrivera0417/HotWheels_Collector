@@ -36,27 +36,38 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
 
     private var userId: Int = 0
     private var selectedCategoryId: Int? = null
-    private var expandedCategory: Int? = null
+
+    private val expandedCategories = mutableSetOf<Int>()
+
     private var cachedCars: List<Car> = emptyList()
     private var cachedCollections: List<Collection> = emptyList()
     private var filteredCars: List<Car> = emptyList()
+
     private var currentQuery = ""
     private var currentColumns = 2
 
-    private val PREFS_NAME = "collection_prefs"
-    private val KEY_LAST_CATEGORY = "last_category"
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         db = DatabaseHelper(requireContext())
+
         userId = SessionManager.getCurrentUserId(requireContext())
+
         recycler = view.findViewById(R.id.recyclerCars)
+
         recyclerCategories = view.findViewById(R.id.recyclerCategories)
+
         emptyState = view.findViewById(R.id.emptyState)
+
         etBuscar = view.findViewById(R.id.etBuscar)
 
-        val fab = view.findViewById<FloatingActionButton>(R.id.fabAdd)
+        val fab =
+            view.findViewById<FloatingActionButton>(
+                R.id.fabAdd
+            )
 
         setupRecycler()
         setupCategories()
@@ -66,7 +77,9 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
         render()
 
         favoriteListener = {
+
             view.post {
+
                 reloadData()
                 render()
             }
@@ -79,33 +92,48 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
                 reloadData()
                 render()
 
-            }.show(parentFragmentManager, "AddCar")
+            }.show(
+                parentFragmentManager,
+                "AddCar"
+            )
         }
     }
 
+    // =========================
+    // RECYCLER
+    // =========================
     private fun setupRecycler() {
 
         adapter = ColeccionAdapter(
             db = db,
-            onHeaderClick = { toggleCategory(it) },
-            onCarClick = { car -> openCarDetail(car.id) },
+
+            onHeaderClick = {
+                toggleCategory(it)
+            },
+            onCarClick = { car ->
+                openCarDetail(car.id)
+            },
             onChange = {
                 reloadData()
                 render()
             }
         )
 
-        val prefs = requireContext().getSharedPreferences(
-            "collector_prefs",
-            Context.MODE_PRIVATE
-        )
+        val prefs =
+            requireContext().getSharedPreferences(
+                "collector_prefs",
+                Context.MODE_PRIVATE
+            )
 
-        currentColumns = prefs.getInt("grid_columns", 2)
+        currentColumns =
+            prefs.getInt(
+                "grid_columns",
+                2
+            )
 
         applyGridLayoutManager()
 
         recycler.adapter = adapter
-        recycler.setHasFixedSize(true)
 
         recycler.itemAnimator =
             DefaultItemAnimator().apply {
@@ -116,7 +144,10 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
     private fun applyGridLayoutManager() {
 
         val layoutManager =
-            GridLayoutManager(requireContext(), currentColumns)
+            GridLayoutManager(
+                requireContext(),
+                currentColumns
+            )
 
         layoutManager.spanSizeLookup =
             object : GridLayoutManager.SpanSizeLookup() {
@@ -133,40 +164,32 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
                     }
                 }
             }
-
         recycler.layoutManager = layoutManager
     }
 
+    // =========================
+    // CATEGORIES
+    // =========================
     private fun setupCategories() {
 
-        categoryAdapter = CategoryAdapter(emptyList()) { category ->
+        categoryAdapter =
+            CategoryAdapter(emptyList()) { category ->
 
-            val clickedId = category?.id
-            val isSameCategory =
-                selectedCategoryId == clickedId
+                val clickedId = category?.id
 
-            if (isSameCategory) {
+                val isSameCategory = selectedCategoryId == clickedId
 
-                selectedCategoryId = null
+                if (isSameCategory) {
 
-                expandedCategory =
-                    getLastCategory()
-                        ?: cachedCollections.firstOrNull()?.id
+                    selectedCategoryId = null
 
-            } else {
+                } else {
 
-                selectedCategoryId = clickedId
-                expandedCategory = clickedId
+                    selectedCategoryId = clickedId
+                }
+                categoryAdapter.setSelectedCategory(selectedCategoryId)
+                render()
             }
-
-            categoryAdapter.setSelectedCategory(
-                selectedCategoryId
-            )
-
-            saveLastCategory(expandedCategory)
-
-            render()
-        }
 
         recyclerCategories.layoutManager =
             LinearLayoutManager(
@@ -178,62 +201,74 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
         recyclerCategories.adapter = categoryAdapter
     }
 
+    // =========================
+    // SEARCH
+    // =========================
     private fun setupSearch() {
 
-        etBuscar.addTextChangedListener(object : TextWatcher {
+        etBuscar.addTextChangedListener(
+            object : TextWatcher {
 
-            override fun beforeTextChanged(
-                s: CharSequence?,
-                start: Int,
-                count: Int,
-                after: Int
-            ) {}
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {}
 
-            override fun onTextChanged(
-                s: CharSequence?,
-                start: Int,
-                before: Int,
-                count: Int
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {
+
+                    currentQuery = s.toString().trim()
+
+                    filteredCars =
+                        if (currentQuery.isEmpty()) {
+
+                            cachedCars
+
+                        } else {
+
+                            cachedCars.filter { car ->
+
+                                val collectionName =
+                                    cachedCollections
+                                        .find {
+                                            it.id == car.collectionId
+                                        }
+                                        ?.name
+                                        .orEmpty()
+
+                                car.name.contains(currentQuery, true)
+
+                                        car.modelCode.contains(currentQuery, true)
+                                        car.seriesNumber.contains(currentQuery, true)
+                                        collectionName.contains(currentQuery, true)
+                            }
+                        }
+                    render()
+                }
+                override fun afterTextChanged(
+                    s: Editable?
+                ) {}
+            }
+        )
+
+        etBuscar.setOnEditorActionListener {
+                v,
+                actionId,
+                _ ->
+
+            if (
+                actionId ==
+                EditorInfo.IME_ACTION_SEARCH
             ) {
 
-                currentQuery = s.toString().trim()
-
-                filteredCars =
-                    if (currentQuery.isEmpty()) {
-
-                        cachedCars
-
-                    } else {
-
-                        cachedCars.filter { car ->
-
-                            val collectionName =
-                                cachedCollections
-                                    .find {
-                                        it.id == car.collectionId
-                                    }
-                                    ?.name
-                                    .orEmpty()
-
-                            car.name.contains(currentQuery, true) ||
-                                    car.modelCode.contains(currentQuery, true) ||
-                                    car.seriesNumber.contains(currentQuery, true) ||
-                                    collectionName.contains(currentQuery, true)
-                        }
-                    }
-
-                render()
-            }
-
-            override fun afterTextChanged(s: Editable?) {}
-        })
-
-        etBuscar.setOnEditorActionListener { v, actionId, _ ->
-
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-
-                val imm = requireContext()
-                    .getSystemService(
+                val imm =
+                    requireContext().getSystemService(
                         Context.INPUT_METHOD_SERVICE
                     ) as InputMethodManager
 
@@ -248,16 +283,13 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
                     filteredCars.isEmpty()
                     && currentQuery.isNotEmpty()
                 ) {
-
                     Toast.makeText(
                         requireContext(),
                         "No se encontraron resultados",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-
                 true
-
             } else {
                 false
             }
@@ -267,24 +299,27 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
     // =========================
     // DATA
     // =========================
-
     private fun getSortedCollections(): List<Collection> {
 
-        val prefs = requireContext().getSharedPreferences(
-            "collector_prefs",
-            Context.MODE_PRIVATE
-        )
+        val prefs =
+            requireContext().getSharedPreferences(
+                "collector_prefs",
+                Context.MODE_PRIVATE
+            )
 
         val sortOrder =
-            prefs.getString("sort_order", "name")
+            prefs.getString(
+                "sort_order",
+                "name"
+            )
 
-        val collections =
-            db.getCollectionsByUser(userId)
+        val collections = db.getCollectionsByUser(userId)
 
         return when (sortOrder) {
-
             "recent" -> {
-                collections.sortedByDescending { it.id }
+                collections.sortedByDescending {
+                    it.id
+                }
             }
 
             else -> {
@@ -297,23 +332,50 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
 
     private fun loadInitialData() {
 
-        cachedCars = db.getCarsByUser(userId)
+        cachedCars =
+            db.getCarsByUser(userId)
 
-        filteredCars = cachedCars
+        filteredCars =
+            cachedCars
 
-        cachedCollections = getSortedCollections()
+        cachedCollections =
+            getSortedCollections()
 
-        expandedCategory =
-            cachedCollections.firstOrNull()?.id
+        cachedCollections.forEach {
+
+            android.util.Log.d(
+                "COLLECTION_DEBUG",
+                "Collection: ${it.id} - ${it.name}"
+            )
+        }
+
+        expandedCategories.clear()
+
+        cachedCollections.forEach {
+            expandedCategories.add(it.id)
+        }
 
         selectedCategoryId = null
 
-        categoryAdapter.updateData(cachedCollections)
+        categoryAdapter.updateData(
+            cachedCollections
+        )
+
+        android.util.Log.d(
+            "DB_DEBUG",
+            "Collections DB = ${db.getCollectionCount(userId)}"
+        )
+
+        android.util.Log.d(
+            "DB_DEBUG",
+            "Cars DB = ${db.getCarCount(userId)}"
+        )
     }
 
     private fun reloadData() {
 
-        cachedCars = db.getCarsByUser(userId)
+        cachedCars =
+            db.getCarsByUser(userId)
 
         filteredCars =
             if (currentQuery.isEmpty()) {
@@ -332,9 +394,9 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
                             ?.name
                             .orEmpty()
 
-                    car.name.contains(currentQuery, true) ||
-                            car.modelCode.contains(currentQuery, true) ||
-                            car.seriesNumber.contains(currentQuery, true) ||
+                    car.name.contains(currentQuery, true)
+                            car.modelCode.contains(currentQuery, true)
+                            car.seriesNumber.contains(currentQuery, true)
                             collectionName.contains(currentQuery, true)
                 }
             }
@@ -347,7 +409,6 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
     // =========================
     // RENDER
     // =========================
-
     private fun render() {
 
         if (cachedCars.isEmpty()) {
@@ -366,19 +427,13 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
         val items = buildItems()
 
         adapter.currentQuery = currentQuery
-
         adapter.submitList(items.toList())
-
-        recycler.post {
-            adapter.notifyDataSetChanged()
-        }
-
-        autoScroll(items)
     }
 
     private fun buildItems(): List<ColeccionItem> {
 
-        val items = mutableListOf<ColeccionItem>()
+        val items =
+            mutableListOf<ColeccionItem>()
 
         cachedCollections.forEach { collection ->
 
@@ -387,10 +442,14 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
                     it.collectionId == collection.id
                 }
 
-            if (fullList.isEmpty()) return@forEach
+            if (fullList.isEmpty()) {
+                return@forEach
+            }
 
             val isExpanded =
-                expandedCategory == collection.id
+                expandedCategories.contains(
+                    collection.id
+                )
 
             val title =
                 "${collection.name} (${fullList.size}/${collection.totalCars})"
@@ -413,64 +472,78 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
             }
         }
 
-        return items
-    }
+        android.util.Log.d(
+            "ITEMS_DEBUG",
+            "TOTAL ITEMS = ${items.size}"
+        )
 
-    private fun autoScroll(items: List<ColeccionItem>) {
+        items.forEach {
 
-        expandedCategory?.let { id ->
+            when(it) {
 
-            val index = items.indexOfFirst {
+                is ColeccionItem.Header -> {
 
-                it is ColeccionItem.Header
-                        && it.collectionId == id
-            }
+                    android.util.Log.d(
+                        "ITEMS_DEBUG",
+                        "HEADER -> ${it.title}"
+                    )
+                }
 
-            if (index != -1) {
+                is ColeccionItem.CarItem -> {
 
-                recycler.post {
-
-                    (recycler.layoutManager
-                            as? GridLayoutManager)
-                        ?.scrollToPositionWithOffset(
-                            index,
-                            0
-                        )
+                    android.util.Log.d(
+                        "ITEMS_DEBUG",
+                        "CAR -> ${it.car.name}"
+                    )
                 }
             }
         }
+
+        return items
     }
 
     // =========================
-    // ACCIONES
+    // ACTIONS
     // =========================
+    private fun toggleCategory(
+        collectionId: Int
+    ) {
 
-    private fun toggleCategory(collectionId: Int) {
-
-        expandedCategory =
-            if (expandedCategory == collectionId) {
-                null
-            } else {
+        if (
+            expandedCategories.contains(
                 collectionId
-            }
+            )
+        ) {
 
-        saveLastCategory(expandedCategory)
+            expandedCategories.remove(
+                collectionId
+            )
+
+        } else {
+
+            expandedCategories.add(
+                collectionId
+            )
+        }
 
         render()
     }
 
-    private fun openCarDetail(carId: Int) {
+    private fun openCarDetail(
+        carId: Int
+    ) {
 
         val bundle = Bundle().apply {
-
-            putInt("CAR_ID", carId)
+            putInt(
+                "CAR_ID",
+                carId
+            )
 
             putBoolean(
                 "FROM_COLLECTION",
                 true
             )
         }
-
         findNavController().navigate(
             R.id.carDetailFragment,
             bundle
@@ -478,55 +551,29 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
     }
 
     // =========================
-    // PREFS
+    // LIFECYCLE
     // =========================
-
-    private fun saveLastCategory(categoryId: Int?) {
-
-        val prefs =
-            requireContext()
-                .getSharedPreferences(
-                    PREFS_NAME,
-                    0
-                )
-
-        prefs.edit()
-            .putInt(
-                KEY_LAST_CATEGORY,
-                categoryId ?: -1
-            )
-            .apply()
-    }
-
-    private fun getLastCategory(): Int? {
-
-        val prefs =
-            requireContext()
-                .getSharedPreferences(
-                    PREFS_NAME,
-                    0
-                )
-
-        val id =
-            prefs.getInt(
-                KEY_LAST_CATEGORY,
-                -1
-            )
-
-        return if (id == -1) null else id
-    }
-
     override fun onResume() {
         super.onResume()
 
-        FavoriteEvents.addListener(favoriteListener)
-
-        val prefs = requireContext().getSharedPreferences(
-            "collector_prefs",
-            Context.MODE_PRIVATE
+        FavoriteEvents.addListener(
+            favoriteListener
         )
 
-        val newColumns = prefs.getInt("grid_columns", 2)
+        reloadData()
+        render()
+
+        val prefs =
+            requireContext().getSharedPreferences(
+                "collector_prefs",
+                Context.MODE_PRIVATE
+            )
+
+        val newColumns =
+            prefs.getInt(
+                "grid_columns",
+                2
+            )
 
         if (newColumns != currentColumns) {
             currentColumns = newColumns
@@ -535,9 +582,9 @@ class ColeccionFragment : Fragment(R.layout.fragment_coleccion) {
     }
 
     override fun onPause() {
-
-        FavoriteEvents.removeListener(favoriteListener)
-
+        FavoriteEvents.removeListener(
+            favoriteListener
+        )
         super.onPause()
     }
 }

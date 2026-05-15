@@ -39,17 +39,14 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     private lateinit var layoutGuest: LinearLayout
     private lateinit var layoutLogged: LinearLayout
-
     private lateinit var tvUserName: TextView
     private lateinit var tvUserEmail: TextView
     private lateinit var tvSyncStatus: TextView
-
     private lateinit var tvCars: TextView
     private lateinit var tvFavs: TextView
-
     private lateinit var imgProfile: ImageView
+    private lateinit var imgEditName: ImageView
 
-    private lateinit var btnEditProfile: MaterialButton
 
     private val imagePickerLauncher =
         registerForActivityResult(
@@ -104,9 +101,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 R.id.btnLogout
             )
 
-        btnEditProfile =
-            view.findViewById(R.id.btnEditProfile)
-
         // =========================
         // STATS
         // =========================
@@ -119,21 +113,20 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         // =========================
         // USER INFO
         // =========================
-        tvUserName =
-            view.findViewById(R.id.tvUserName)
+        tvUserName = view.findViewById(R.id.tvUserName)
 
-        tvUserEmail =
-            view.findViewById(R.id.tvUserEmail)
+        tvUserEmail = view.findViewById(R.id.tvUserEmail)
 
-        tvSyncStatus =
-            view.findViewById(R.id.tvSyncStatus)
+        tvSyncStatus = view.findViewById(R.id.tvSyncStatus)
 
-        imgProfile =
-            view.findViewById(R.id.imgProfile)
+        imgProfile = view.findViewById(R.id.imgProfile)
+
+        imgEditName = view.findViewById(R.id.imgEditName)
 
         // =========================
         // PROFILE IMAGE CLICK
         // =========================
+
         imgProfile.setOnClickListener {
 
             val firebaseUser =
@@ -197,6 +190,25 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         // =========================
+        // PROFILE NAME CLICK
+        // =========================
+        imgEditName.setOnClickListener {
+
+            if (isGoogleUser()) {
+
+                Toast.makeText(
+                    requireContext(),
+                    "Nombre administrado por Google",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setOnClickListener
+            }
+
+            showEditProfileDialog()
+        }
+
+        // =========================
         // LOGIN
         // =========================
         btnLogin.setOnClickListener {
@@ -212,14 +224,6 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
             findNavController()
                 .navigate(R.id.registerFragment)
-        }
-
-        // =========================
-        // EDIT PROFILE
-        // =========================
-        btnEditProfile.setOnClickListener {
-
-            showEditProfileDialog()
         }
 
         // =========================
@@ -319,7 +323,15 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     override fun onResume() {
         super.onResume()
-        refreshProfile()
+
+        FirebaseAuth.getInstance()
+            .currentUser
+            ?.reload()
+            ?.addOnCompleteListener {
+
+                refreshProfile()
+            }
+            ?: refreshProfile()
     }
 
     // =========================
@@ -327,11 +339,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
     // =========================
     private fun refreshProfile() {
 
-        val firebaseUser =
-            FirebaseAuth.getInstance().currentUser
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
 
-        val isLoggedIn =
-            firebaseUser != null
+        val isLoggedIn = firebaseUser != null
 
         updateProfileState(
             isLoggedIn = isLoggedIn,
@@ -342,39 +352,22 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
         refreshStats()
 
-        btnEditProfile.text =
-            if (isGoogleUser()) {
-                "Editar nombre"
-            } else {
-                "Editar perfil"
-            }
-
         // =========================
         // LAST SYNC
         // =========================
-        val lastSync =
-            SyncPreferences.getLastSync(
-                requireContext()
-            )
+        val lastSync = SyncPreferences.getLastSync(requireContext())
 
         if (lastSync == 0L) {
 
-            tvSyncStatus.text =
-                "Última sincronización: Nunca"
+            tvSyncStatus.text = "Última sincronización: Nunca"
 
         } else {
 
-            val formatter =
-                SimpleDateFormat(
-                    "dd/MM/yyyy HH:mm",
-                    Locale.getDefault()
-                )
+            val formatter = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
-            val formattedDate =
-                formatter.format(Date(lastSync))
+            val formattedDate = formatter.format(Date(lastSync))
 
-            tvSyncStatus.text =
-                "Última sincronización: $formattedDate"
+            tvSyncStatus.text = "Última sincronización: $formattedDate"
         }
 
         // =========================
@@ -402,8 +395,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                         R.drawable.ic_profile
                     )
                 }
-
-            } else {
+            }else {
 
                 val db =
                     DatabaseHelper(requireContext())

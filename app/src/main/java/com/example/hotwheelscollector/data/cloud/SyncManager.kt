@@ -10,28 +10,43 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 object SyncManager {
 
-    private val firestore =
-        FirebaseFirestore.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
-    private fun hasInternet(
-        context: Context
-    ): Boolean {
-
-        return NetworkMonitor(context)
-            .isConnected()
+    // =========================
+    // FIREBASE UID SAFE ACCESS
+    // =========================
+    private fun getUid(): String? {
+        return FirebaseAuth.getInstance().currentUser?.uid
     }
 
     // =========================
-    // SYNC COLLECTION
+    // INTERNET CHECK
     // =========================
-    fun syncCollection(collection: Collection) {
+    private fun hasInternet(context: Context): Boolean {
+        return NetworkMonitor(context).isConnected()
+    }
 
-        val firebaseUser =
-            FirebaseAuth.getInstance().currentUser
-                ?: return
+    // ======================================================
+    // SYNC COLLECTION
+    // ======================================================
+    fun syncCollection(context: Context, collection: Collection) {
+
+        val uid = getUid()
+
+        // ❌ SIN CLOUD USER → GUARDAR PENDIENTE
+        if (uid == null) {
+            PendingSyncManager.addCollection(collection)
+            Log.d("SYNC", "Collection saved as pending")
+            return
+        }
+
+        if (!hasInternet(context)) {
+            PendingSyncManager.addCollection(collection)
+            Log.d("SYNC", "No internet - collection pending")
+            return
+        }
 
         val data = hashMapOf(
-
             "id" to collection.id,
             "userId" to collection.userId,
             "name" to collection.name,
@@ -39,62 +54,40 @@ object SyncManager {
             "updatedAt" to System.currentTimeMillis()
         )
 
-        SyncStatusManager.setState(
-            SyncState.SYNCING
-        )
-
         firestore.collection("users")
-            .document(firebaseUser.uid)
+            .document(uid)
             .collection("collections")
             .document(collection.id.toString())
             .set(data)
             .addOnSuccessListener {
-
-                SyncStatusManager.setState(
-                    SyncState.SYNCED
-                )
-
-                Log.d(
-                    "SYNC",
-                    "Collection synced"
-                )
+                Log.d("SYNC", "Collection synced")
             }
             .addOnFailureListener {
-
-                SyncStatusManager.setState(
-                    SyncState.ERROR
-                )
-
-                Log.e(
-                    "SYNC",
-                    "Collection sync failed"
-                )
+                PendingSyncManager.addCollection(collection)
+                Log.e("SYNC", "Collection sync failed → pending")
             }
     }
 
-    // =========================
+    // ======================================================
     // SYNC CAR
-    // =========================
-    fun syncCar(
-        context: Context,
-        car: Car
-    ){
+    // ======================================================
+    fun syncCar(context: Context, car: Car) {
 
-        val firebaseUser =
-            FirebaseAuth.getInstance().currentUser
-                ?: return
+        val uid = getUid()
+
+        if (uid == null) {
+            PendingSyncManager.addCar(car)
+            Log.d("SYNC", "Car saved as pending")
+            return
+        }
 
         if (!hasInternet(context)) {
-
-            SyncStatusManager.setState(
-                SyncState.PENDING
-            )
-
+            PendingSyncManager.addCar(car)
+            Log.d("SYNC", "No internet - car pending")
             return
         }
 
         val data = hashMapOf(
-
             "id" to car.id,
             "userId" to car.userId,
             "collectionId" to car.collectionId,
@@ -114,68 +107,65 @@ object SyncManager {
             "updatedAt" to car.updatedAt
         )
 
-        SyncStatusManager.setState(
-            SyncState.SYNCING
-        )
-
         firestore.collection("users")
-            .document(firebaseUser.uid)
+            .document(uid)
             .collection("cars")
             .document(car.id.toString())
             .set(data)
             .addOnSuccessListener {
-
-                SyncStatusManager.setState(
-                    SyncState.SYNCED
-                )
-
-                Log.d(
-                    "SYNC",
-                    "Car synced"
-                )
+                Log.d("SYNC", "Car synced")
             }
             .addOnFailureListener {
-
-                SyncStatusManager.setState(
-                    SyncState.PENDING
-                )
-
-                Log.e(
-                    "SYNC",
-                    "Car sync failed"
-                )
+                PendingSyncManager.addCar(car)
+                Log.e("SYNC", "Car sync failed → pending")
             }
     }
 
-    // =========================
+    // ======================================================
     // DELETE CAR
-    // =========================
+    // ======================================================
     fun deleteCar(carId: Int) {
 
-        val firebaseUser =
-            FirebaseAuth.getInstance().currentUser
-                ?: return
+        val uid = getUid() ?: return
 
         firestore.collection("users")
-            .document(firebaseUser.uid)
+            .document(uid)
             .collection("cars")
             .document(carId.toString())
             .delete()
     }
 
-    // =========================
+    // ======================================================
     // DELETE COLLECTION
-    // =========================
+    // ======================================================
     fun deleteCollection(collectionId: Int) {
 
-        val firebaseUser =
-            FirebaseAuth.getInstance().currentUser
-                ?: return
+        val uid = getUid() ?: return
 
         firestore.collection("users")
-            .document(firebaseUser.uid)
+            .document(uid)
             .collection("collections")
             .document(collectionId.toString())
             .delete()
+    }
+
+    // ======================================================
+    // FLUSH PENDING SYNC (CUANDO EL USUARIO HACE LOGIN)
+    // ======================================================
+    fun flushPendingSync(context: Context) {
+
+        val uid = getUid() ?: return
+
+        Log.d("SYNC", "Flushing pending data for user $uid")
+
+        PendingSyncManager.getPendingCars().forEach {
+            syncCar(context, it)
+        }
+
+        PendingSyncManager.getPendingCollections().forEach {
+            syncCollection(context, it)
+        }
+
+        PendingSyncManager.clearAll()
     }
 }

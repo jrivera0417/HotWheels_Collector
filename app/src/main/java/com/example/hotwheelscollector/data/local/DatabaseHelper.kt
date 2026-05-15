@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 import com.example.hotwheelscollector.data.notifications.AppNotification
 import com.example.hotwheelscollector.data.models.Car
 import com.example.hotwheelscollector.data.models.Collection
@@ -532,6 +533,56 @@ class DatabaseHelper(
         return list
     }
 
+    fun getCollectionCount(userId: Int): Int {
+
+        val db = readableDatabase
+
+        val cursor = db.rawQuery(
+            """
+        SELECT COUNT(*)
+        FROM $TABLE_COLLECTIONS
+        WHERE $COL_COLLECTION_USER_ID = ?
+        """.trimIndent(),
+            arrayOf(userId.toString())
+        )
+
+        val count =
+            if (cursor.moveToFirst()) {
+                cursor.getInt(0)
+            } else {
+                0
+            }
+
+        cursor.close()
+
+        return count
+    }
+
+    fun getCarCount(userId: Int): Int {
+
+        val db = readableDatabase
+
+        val cursor = db.rawQuery(
+            """
+        SELECT COUNT(*)
+        FROM $TABLE_CARS
+        WHERE $COL_CAR_USER_ID = ?
+        """.trimIndent(),
+            arrayOf(userId.toString())
+        )
+
+        val count =
+            if (cursor.moveToFirst()) {
+                cursor.getInt(0)
+            } else {
+                0
+            }
+
+        cursor.close()
+
+        return count
+    }
+
     fun getCollectionById(
         collectionId: Int
     ): Collection? {
@@ -596,7 +647,12 @@ class DatabaseHelper(
 
         val values = ContentValues().apply {
 
-            put(COL_CAR_ID, car.id)
+            // IMPORTANTE:
+            // SOLO insertar ID si ya existe
+            if (car.id > 0) {
+                put(COL_CAR_ID, car.id)
+            }
+
             put(COL_CAR_USER_ID, car.userId)
             put(COL_COLLECTION_ID_FK, car.collectionId)
             put(COL_MODEL_CODE, car.modelCode)
@@ -612,20 +668,28 @@ class DatabaseHelper(
             put(COL_QUANTITY, car.quantity)
             put(COL_FAVORITE, if (car.favorite) 1 else 0)
             put(COL_IMAGE_URL, car.imageUrl)
-            put(COL_UPDATED_AT, car.updatedAt)
+            put(COL_CAR_UPDATED_AT, System.currentTimeMillis())
         }
 
-        val id = db.insertWithOnConflict(
+        val insertedId = db.insert(
             TABLE_CARS,
             null,
-            values,
-            SQLiteDatabase.CONFLICT_REPLACE
+            values
         )
 
-        // =========================
-        // FIRESTORE SYNC
-        // =========================
-        if (id != -1L) {
+        if (insertedId != -1L) {
+
+            val finalCar = car.copy(
+                id = if (car.id > 0)
+                    car.id
+                else
+                    insertedId.toInt()
+            )
+
+            Log.d(
+                "CAR_ID_DEBUG",
+                "Inserted car ${finalCar.name} with ID=${finalCar.id}"
+            )
 
             SyncStatusManager.setState(
                 SyncState.PENDING
@@ -633,14 +697,11 @@ class DatabaseHelper(
 
             SyncManager.syncCar(
                 context,
-                car.copy(
-                    id = car.id.takeIf { it != 0 }
-                        ?: id.toInt()
-                )
+                finalCar
             )
         }
 
-        return id
+        return insertedId
     }
 
     fun insertCarLocalOnly(car: Car): Long {
