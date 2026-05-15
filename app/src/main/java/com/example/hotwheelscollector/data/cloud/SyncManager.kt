@@ -2,9 +2,10 @@ package com.example.hotwheelscollector.data.cloud
 
 import android.content.Context
 import android.util.Log
+import com.example.hotwheelscollector.data.local.DatabaseHelper
+import com.example.hotwheelscollector.data.local.SessionManager
 import com.example.hotwheelscollector.data.models.Car
 import com.example.hotwheelscollector.data.models.Collection
-import com.example.hotwheelscollector.data.network.NetworkMonitor
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -13,83 +14,31 @@ object SyncManager {
     private val firestore = FirebaseFirestore.getInstance()
 
     // =========================
-    // FIREBASE UID SAFE ACCESS
+    // SAFE GATE (CLAVE DEL SISTEMA)
     // =========================
-    private fun getUid(): String? {
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    private fun uid(): String? {
         return FirebaseAuth.getInstance().currentUser?.uid
     }
 
     // =========================
-    // INTERNET CHECK
-    // =========================
-    private fun hasInternet(context: Context): Boolean {
-        return NetworkMonitor(context).isConnected()
-    }
-
-    // ======================================================
-    // SYNC COLLECTION
-    // ======================================================
-    fun syncCollection(context: Context, collection: Collection) {
-
-        val uid = getUid()
-
-        // ❌ SIN CLOUD USER → GUARDAR PENDIENTE
-        if (uid == null) {
-            PendingSyncManager.addCollection(collection)
-            Log.d("SYNC", "Collection saved as pending")
-            return
-        }
-
-        if (!hasInternet(context)) {
-            PendingSyncManager.addCollection(collection)
-            Log.d("SYNC", "No internet - collection pending")
-            return
-        }
-
-        val data = hashMapOf(
-            "id" to collection.id,
-            "userId" to collection.userId,
-            "name" to collection.name,
-            "totalCars" to collection.totalCars,
-            "updatedAt" to System.currentTimeMillis()
-        )
-
-        firestore.collection("users")
-            .document(uid)
-            .collection("collections")
-            .document(collection.id.toString())
-            .set(data)
-            .addOnSuccessListener {
-                Log.d("SYNC", "Collection synced")
-            }
-            .addOnFailureListener {
-                PendingSyncManager.addCollection(collection)
-                Log.e("SYNC", "Collection sync failed → pending")
-            }
-    }
-
-    // ======================================================
     // SYNC CAR
-    // ======================================================
-    fun syncCar(context: Context, car: Car) {
+    // =========================
+    fun syncCar(car: Car) {
 
-        val uid = getUid()
-
-        if (uid == null) {
-            PendingSyncManager.addCar(car)
-            Log.d("SYNC", "Car saved as pending")
+        if (!isUserLoggedIn()) {
+            Log.d("SYNC", "Blocked: user not logged in")
             return
         }
 
-        if (!hasInternet(context)) {
-            PendingSyncManager.addCar(car)
-            Log.d("SYNC", "No internet - car pending")
-            return
-        }
+        val userId = uid() ?: return
 
         val data = hashMapOf(
             "id" to car.id,
-            "userId" to car.userId,
+            "userId" to userId,
             "collectionId" to car.collectionId,
             "modelCode" to car.modelCode,
             "name" to car.name,
@@ -104,68 +53,114 @@ object SyncManager {
             "quantity" to car.quantity,
             "favorite" to car.favorite,
             "imageUrl" to car.imageUrl,
-            "updatedAt" to car.updatedAt
+            "updatedAt" to System.currentTimeMillis()
         )
 
         firestore.collection("users")
-            .document(uid)
+            .document(userId)
             .collection("cars")
             .document(car.id.toString())
             .set(data)
             .addOnSuccessListener {
-                Log.d("SYNC", "Car synced")
+                Log.d("SYNC", "Car synced: ${car.name}")
             }
             .addOnFailureListener {
-                PendingSyncManager.addCar(car)
-                Log.e("SYNC", "Car sync failed → pending")
+                Log.e("SYNC", "Car sync failed: ${car.name}")
             }
     }
 
-    // ======================================================
-    // DELETE CAR
-    // ======================================================
-    fun deleteCar(carId: Int) {
+    // =========================
+    // SYNC COLLECTION
+    // =========================
+    fun syncCollection(collection: Collection) {
 
-        val uid = getUid() ?: return
+        if (!isUserLoggedIn()) {
+            Log.d("SYNC", "Blocked: user not logged in")
+            return
+        }
+
+        val userId = uid() ?: return
+
+        val data = hashMapOf(
+            "id" to collection.id,
+            "userId" to userId,
+            "name" to collection.name,
+            "totalCars" to collection.totalCars,
+            "updatedAt" to System.currentTimeMillis()
+        )
 
         firestore.collection("users")
-            .document(uid)
+            .document(userId)
+            .collection("collections")
+            .document(collection.id.toString())
+            .set(data)
+            .addOnSuccessListener {
+                Log.d("SYNC", "Collection synced: ${collection.name}")
+            }
+            .addOnFailureListener {
+                Log.e("SYNC", "Collection sync failed")
+            }
+    }
+
+    // =========================
+    // FULL SYNC (SAFE HYBRID)
+    // =========================
+    fun syncAllLocalData(context: Context) {
+
+        if (!isUserLoggedIn()) {
+            Log.d("SYNC", "Hybrid mode: guest user → sync skipped")
+            return
+        }
+
+        val firebaseUid = uid() ?: return
+
+        val db = DatabaseHelper(context)
+
+        val localUserId = SessionManager.getCurrentUserId(context)
+
+        val cars = db.getCarsByUser(localUserId)
+        val collections = db.getCollectionsByUser(localUserId)
+
+        if (cars.isEmpty() && collections.isEmpty()) {
+            Log.d("SYNC", "Nothing to sync")
+            return
+        }
+
+        cars.forEach { syncCar(it) }
+        collections.forEach { syncCollection(it) }
+
+        Log.d("SYNC", "Full sync completed for user: $firebaseUid")
+    }
+
+    // =========================
+    // DELETE CAR
+    // =========================
+    fun deleteCar(carId: Int) {
+
+        if (!isUserLoggedIn()) return
+
+        val userId = uid() ?: return
+
+        firestore.collection("users")
+            .document(userId)
             .collection("cars")
             .document(carId.toString())
             .delete()
     }
 
-    // ======================================================
+    // =========================
     // DELETE COLLECTION
-    // ======================================================
+    // =========================
     fun deleteCollection(collectionId: Int) {
 
-        val uid = getUid() ?: return
+        if (!isUserLoggedIn()) return
+
+        val userId = uid() ?: return
 
         firestore.collection("users")
-            .document(uid)
+            .document(userId)
             .collection("collections")
             .document(collectionId.toString())
             .delete()
-    }
-
-    // ======================================================
-    // FLUSH PENDING SYNC (CUANDO EL USUARIO HACE LOGIN)
-    // ======================================================
-    fun flushPendingSync(context: Context) {
-
-        val uid = getUid() ?: return
-
-        Log.d("SYNC", "Flushing pending data for user $uid")
-
-        PendingSyncManager.getPendingCars().forEach {
-            syncCar(context, it)
-        }
-
-        PendingSyncManager.getPendingCollections().forEach {
-            syncCollection(context, it)
-        }
-
-        PendingSyncManager.clearAll()
     }
 }

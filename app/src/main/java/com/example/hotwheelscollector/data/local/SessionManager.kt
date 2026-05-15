@@ -7,44 +7,54 @@ import com.google.firebase.auth.FirebaseAuth
 object SessionManager {
 
     // =========================
-    // FIREBASE USER (CLOUD)
+    // FIREBASE USER (SAFE)
     // =========================
     fun getFirebaseUser() =
         FirebaseAuth.getInstance().currentUser
 
-    fun isCloudLoggedIn(): Boolean {
-        return getFirebaseUser() != null
+    // =========================
+    // LOGGED STATE (MEJORADO)
+    // =========================
+    fun isLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
     }
 
     // =========================
-    // LOCAL SQLITE USER
+    // LOCAL USER (FIREBASE LINKED)
     // =========================
     fun getLocalUser(context: Context): User? {
 
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+
+        if (firebaseUser == null) return null
+
         val db = DatabaseHelper(context)
 
-        // 🔴 CAMBIO CLAVE:
-        // ya NO dependemos de Firebase obligatoriamente
-        return try {
-            val firebaseUser = getFirebaseUser()
-
-            if (firebaseUser != null) {
-                db.getUserByFirebaseUid(firebaseUser.uid)
-            } else {
-                null
-            }
-
-        } catch (e: Exception) {
-            null
-        }
+        return db.getUserByFirebaseUid(firebaseUser.uid)
     }
 
     // =========================
     // GUEST USER (SIEMPRE DISPONIBLE)
     // =========================
     fun getOrCreateGuestUser(context: Context): User {
-        return DatabaseHelper(context)
-            .ensureGuestUser()
+
+        val db = DatabaseHelper(context)
+        val existing = db.getUserByFirebaseUid("")
+
+        return if (existing != null) {
+            existing
+        } else {
+            db.insertUser(
+                User(
+                    name = "Invitado",
+                    email = "guest@local",
+                    password = "",
+                    firebaseUid = ""
+                )
+            )
+
+            db.getUserByFirebaseUid("")!!
+        }
     }
 
     // =========================
@@ -52,25 +62,23 @@ object SessionManager {
     // =========================
     fun getCurrentUserId(context: Context): Int {
 
-        val localUser = getLocalUser(context)
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
 
-        return localUser?.id
-            ?: getOrCreateGuestUser(context).id
+        return if (firebaseUser != null) {
+
+            val db = DatabaseHelper(context)
+            val localUser = db.getUserByFirebaseUid(firebaseUser.uid)
+
+            localUser?.id ?: getOrCreateGuestUser(context).id
+
+        } else {
+
+            getOrCreateGuestUser(context).id
+        }
     }
 
     // =========================
-    // ESTADO HÍBRIDO
-    // =========================
-    fun isLoggedInCloud(): Boolean {
-        return FirebaseAuth.getInstance().currentUser != null
-    }
-
-    fun isGuestMode(context: Context): Boolean {
-        return getLocalUser(context) == null
-    }
-
-    // =========================
-    // LOGOUT (SOLO CLOUD)
+    // LOGOUT (CLEAN)
     // =========================
     fun logout() {
         FirebaseAuth.getInstance().signOut()

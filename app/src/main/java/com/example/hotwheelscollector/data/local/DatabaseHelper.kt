@@ -696,7 +696,6 @@ class DatabaseHelper(
             )
 
             SyncManager.syncCar(
-                context,
                 finalCar
             )
         }
@@ -819,7 +818,6 @@ class DatabaseHelper(
                 SyncState.PENDING
             )
             SyncManager.syncCar(
-                context,
                 it
             )
         }
@@ -934,7 +932,6 @@ class DatabaseHelper(
                 SyncState.PENDING
             )
             SyncManager.syncCar(
-                context,
                 updatedCar
             )
         }
