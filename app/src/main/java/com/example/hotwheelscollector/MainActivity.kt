@@ -14,15 +14,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
-import com.example.hotwheelscollector.data.notifications.AppNotification
-import com.example.hotwheelscollector.data.local.DatabaseHelper
 import com.example.hotwheelscollector.data.backup.FileExporter
 import com.example.hotwheelscollector.data.backup.FileImporter
 import com.example.hotwheelscollector.data.cloud.FirestoreManager
-import com.example.hotwheelscollector.data.network.NetworkMonitor
-import com.example.hotwheelscollector.data.local.SessionManager
 import com.example.hotwheelscollector.data.cloud.SyncState
 import com.example.hotwheelscollector.data.cloud.SyncStatusManager
+import com.example.hotwheelscollector.data.local.DatabaseHelper
+import com.example.hotwheelscollector.data.local.SessionManager
+import com.example.hotwheelscollector.data.network.NetworkMonitor
+import com.example.hotwheelscollector.data.notifications.AppNotification
 import com.example.hotwheelscollector.ui.notifications.NotificationBottomSheet
 import com.example.hotwheelscollector.ui.settings.CollectorSetupBottomSheet
 import com.google.firebase.auth.FirebaseAuth
@@ -46,6 +46,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var notificationDot: View
     private lateinit var imgSyncStatus: ImageView
     private lateinit var ivMenu: ImageView
+
+    // =========================
+    // FIREBASE AUTH
+    // =========================
+    private lateinit var auth: FirebaseAuth
+    private lateinit var authListener: FirebaseAuth.AuthStateListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -75,6 +81,23 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // =========================
+        // FIREBASE AUTH
+        // =========================
+        auth = FirebaseAuth.getInstance()
+
+        authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+
+            val user = firebaseAuth.currentUser
+
+            Log.d(
+                "AUTH_LISTENER",
+                "Usuario restaurado: ${user?.email}"
+            )
+
+            refreshTopBarState()
+        }
+
+        // =========================
         // DATABASE
         // =========================
         db = DatabaseHelper(this)
@@ -89,12 +112,10 @@ class MainActivity : AppCompatActivity() {
         // =========================
         val firebaseUser = FirebaseAuth.getInstance().currentUser
 
-        Log.d("SESSION_DEBUG", "Firebase User = ${firebaseUser?.email}")
-
-        val auth = FirebaseAuth.getInstance()
-
-        Log.d("SESSION_DEBUG", "UID: ${auth.currentUser?.uid}")
-        Log.d("SESSION_DEBUG", "Email: ${auth.currentUser?.email}")
+        Log.d(
+            "SESSION_DEBUG",
+            "Firebase User = ${firebaseUser?.email}"
+        )
 
         // =========================
         // RESTORE SQLITE USER
@@ -145,10 +166,10 @@ class MainActivity : AppCompatActivity() {
                         SyncState.SYNCING
                     )
 
-                    val firebaseUser =
+                    val currentFirebaseUser =
                         FirebaseAuth.getInstance().currentUser
 
-                    if (firebaseUser != null) {
+                    if (currentFirebaseUser != null) {
 
                         FirestoreManager(this)
                             .syncAllToCloud(
@@ -161,9 +182,6 @@ class MainActivity : AppCompatActivity() {
                                             SyncState.SYNCED
                                         )
 
-                                        // =========================
-                                        // NOTIFICACIÓN DE SYNC
-                                        // =========================
                                         db.insertNotification(
                                             AppNotification(
                                                 title = "Sincronización completada",
@@ -187,6 +205,7 @@ class MainActivity : AppCompatActivity() {
                                     }
                                 }
                             )
+
                     } else {
 
                         SyncStatusManager.setState(
@@ -272,13 +291,17 @@ class MainActivity : AppCompatActivity() {
         // =========================
         val ivTune = findViewById<ImageView>(R.id.ivTune)
 
-        val layoutNotifications = findViewById<View>(R.id.layoutNotifications)
+        val layoutNotifications =
+            findViewById<View>(R.id.layoutNotifications)
 
-        imgSyncStatus = findViewById<ImageView>(R.id.imgSyncStatus)
+        imgSyncStatus =
+            findViewById(R.id.imgSyncStatus)
 
-        ivMenu = findViewById(R.id.ivMenu)
+        ivMenu =
+            findViewById(R.id.ivMenu)
 
-        notificationDot = findViewById(R.id.viewNotificationDot)
+        notificationDot =
+            findViewById(R.id.viewNotificationDot)
 
         refreshNotificationDot()
 
@@ -300,35 +323,30 @@ class MainActivity : AppCompatActivity() {
             ) {
 
                 SyncState.SYNCED -> {
-
                     "Colección sincronizada correctamente"
                 }
 
                 SyncState.PENDING -> {
-
                     "Hay cambios pendientes por sincronizar"
                 }
 
                 SyncState.SYNCING -> {
-
                     "Sincronizando colección..."
                 }
 
                 SyncState.OFFLINE -> {
-
                     "Sin conexión a internet"
                 }
 
                 SyncState.ERROR -> {
-
                     "Error de sincronización"
                 }
             }
 
-            android.widget.Toast.makeText(
+            Toast.makeText(
                 this,
                 message,
-                android.widget.Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT
             ).show()
         }
 
@@ -377,7 +395,8 @@ class MainActivity : AppCompatActivity() {
 
                 val item = popupMenu.menu.getItem(i)
 
-                val spannable = android.text.SpannableString(item.title)
+                val spannable =
+                    android.text.SpannableString(item.title)
 
                 spannable.setSpan(
                     android.text.style.ForegroundColorSpan(
@@ -394,9 +413,6 @@ class MainActivity : AppCompatActivity() {
             val isLoggedIn =
                 FirebaseAuth.getInstance().currentUser != null
 
-            // =========================
-            // SOLO USUARIOS LOGUEADOS
-            // =========================
             popupMenu.menu
                 .findItem(R.id.menu_statistics)
                 ?.isVisible = isLoggedIn
@@ -525,10 +541,10 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_profile
             )
 
-            // RESET
             itemIds.forEachIndexed { index, id ->
 
-                val item = findViewById<View>(id)
+                val item =
+                    findViewById<View>(id)
 
                 item.animate()
                     .scaleX(1f)
@@ -543,7 +559,6 @@ class MainActivity : AppCompatActivity() {
                     .setTextColor(inactiveColor)
             }
 
-            // ACTIVO
             selected.animate()
                 .scaleX(1.03f)
                 .scaleY(1.03f)
@@ -639,11 +654,7 @@ class MainActivity : AppCompatActivity() {
                     layoutNotifications.visibility =
                         View.VISIBLE
 
-                    imgSyncStatus.visibility =
-                        if (FirebaseAuth.getInstance().currentUser != null)
-                            View.VISIBLE
-                        else
-                            View.GONE
+                    refreshTopBarState()
 
                     refreshNotificationDot()
                 }
@@ -655,11 +666,7 @@ class MainActivity : AppCompatActivity() {
                     layoutNotifications.visibility =
                         View.GONE
 
-                    imgSyncStatus.visibility =
-                        if (FirebaseAuth.getInstance().currentUser != null)
-                            View.VISIBLE
-                        else
-                            View.GONE
+                    refreshTopBarState()
                 }
 
                 R.id.nav_favorites -> {
@@ -744,11 +751,7 @@ class MainActivity : AppCompatActivity() {
                     layoutNotifications.visibility =
                         View.VISIBLE
 
-                    imgSyncStatus.visibility =
-                        if (FirebaseAuth.getInstance().currentUser != null)
-                            View.VISIBLE
-                        else
-                            View.GONE
+                    refreshTopBarState()
 
                     refreshNotificationDot()
                 }
@@ -762,11 +765,7 @@ class MainActivity : AppCompatActivity() {
                     layoutNotifications.visibility =
                         View.GONE
 
-                    imgSyncStatus.visibility =
-                        if (FirebaseAuth.getInstance().currentUser != null)
-                            View.VISIBLE
-                        else
-                            View.GONE
+                    refreshTopBarState()
                 }
 
                 R.id.nav_favorites -> {
@@ -809,6 +808,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     // =========================
+    // REFRESH TOP BAR
+    // =========================
+    private fun refreshTopBarState() {
+
+        if (!::imgSyncStatus.isInitialized) {
+            return
+        }
+
+        val isLoggedIn =
+            FirebaseAuth.getInstance().currentUser != null
+
+        imgSyncStatus.visibility =
+            if (isLoggedIn)
+                View.VISIBLE
+            else
+                View.GONE
+    }
+
+    // =========================
     // SYNC ICON
     // =========================
     private fun updateSyncIcon(
@@ -818,9 +836,6 @@ class MainActivity : AppCompatActivity() {
         val firebaseUser: FirebaseUser? =
             FirebaseAuth.getInstance().currentUser
 
-        // =========================
-        // SOLO USUARIOS LOGUEADOS
-        // =========================
         if (firebaseUser == null) {
 
             imgSyncStatus.visibility = View.GONE
@@ -885,5 +900,20 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    // =========================
+    // LIFECYCLE
+    // =========================
+    override fun onStart() {
+        super.onStart()
+
+        auth.addAuthStateListener(authListener)
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        auth.removeAuthStateListener(authListener)
     }
 }
